@@ -21,6 +21,8 @@ import sys
 
 from argparse import ArgumentParser
 from datetime import datetime
+
+import six
 from os import path
 from threading import Thread, active_count, Event
 from time import sleep
@@ -55,66 +57,72 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
     env = PigChaseEnvironment(clients, builder, role=role,
                               randomize_positions=True)
 
-    if role == 0:
-        agent = PigChaseChallengeAgent(name)
+    try:
+        if role == 0:
+            agent = PigChaseChallengeAgent(name)
 
-        if type(agent.current_agent) == RandomAgent:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_1
+            if type(agent.current_agent) == RandomAgent:
+                agent_type = PigChaseEnvironment.AGENT_TYPE_1
+            else:
+                agent_type = PigChaseEnvironment.AGENT_TYPE_2
+            obs = env.reset(agent_type)
+
+            reward = 0
+            agent_done = False
+
+            while not sync.is_set():
+
+                # select an action
+                action = agent.act(obs, reward, agent_done, is_training=True)
+
+                # reset if needed
+                if env.done:
+                    if type(agent.current_agent) == RandomAgent:
+                        agent_type = PigChaseEnvironment.AGENT_TYPE_1
+                    else:
+                        agent_type = PigChaseEnvironment.AGENT_TYPE_2
+                    obs = env.reset(agent_type)
+
+                # take a step
+                obs, reward, agent_done = env.do(action)
         else:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
 
-        reward = 0
-        agent_done = False
+            if baseline_agent == 'astar':
+                agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
+            else:
+                agent = RandomAgent(name, env.available_actions)
 
-        while not sync.is_set():
+            obs = env.reset()
+            reward = 0
+            agent_done = False
+            viz_rewards = []
 
-            # select an action
-            action = agent.act(obs, reward, agent_done, is_training=True)
+            max_training_steps = EPOCH_SIZE * max_epochs
+            for step in six.moves.range(1, max_training_steps+1):
 
-            # reset if needed
-            if env.done:
-                if type(agent.current_agent) == RandomAgent:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
-                else:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
+                # Externally finished experiment, abort
+                if sync.is_set():
+                    break
 
-            # take a step
-            obs, reward, agent_done = env.do(action)
+                # check if env needs reset
+                if env.done:
 
+                    visualize_training(visualizer, step, viz_rewards)
+                    viz_rewards = []
+                    obs = env.reset()
 
-    else:
+                # select an action
+                action = agent.act(obs, reward, agent_done, is_training=True)
+                # take a step
+                obs, reward, agent_done = env.do(action)
+                viz_rewards.append(reward)
 
-        if baseline_agent == 'astar':
-            agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
-        else:
-            agent = RandomAgent(name, env.available_actions)
-
-        obs = env.reset()
-        reward = 0
-        agent_done = False
-        viz_rewards = []
-
-        max_training_steps = EPOCH_SIZE * max_epochs
-        for step in range(1, max_training_steps+1):
-
-            # check if env needs reset
-            if env.done:
-
-                visualize_training(visualizer, step, viz_rewards)
-                viz_rewards = []
-                obs = env.reset()
-
-            # select an action
-            action = agent.act(obs, reward, agent_done, is_training=True)
-            # take a step
-            obs, reward, agent_done = env.do(action)
-            viz_rewards.append(reward)
-
-            agent.inject_summaries(step)
-
+                agent.inject_summaries(step)
+    except Exception:
+        pass
+    finally:
         sync.set()
+
 
 def run_experiment(agents_def):
     assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)'\
@@ -137,6 +145,7 @@ def run_experiment(agents_def):
         # wait until only the challenge agent is left
         sync.wait()
     except KeyboardInterrupt:
+        sync.set()
         print('Caught control-c - shutting down.')
 
 
