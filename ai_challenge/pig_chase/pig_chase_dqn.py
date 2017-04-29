@@ -140,13 +140,12 @@ def agent_factory(name, role, clients, backend,
 
 
 def run_experiment(agents_def):
-    assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)' \
-                                 % len(agents_def)
+    assert len(agents_def) == 2, \
+        'Not enough agents (required: 2, got: %d)' % len(agents_def)
 
     processes = []
     for agent in agents_def:
         p = Thread(target=agent_factory, kwargs=agent)
-        p.daemon = True
         p.start()
 
         # Give the server time to start
@@ -186,7 +185,8 @@ if __name__ == '__main__':
 
     agents = [{'name': agent, 'role': role, 'clients': args.clients,
                'backend': args.backend, 'device': args.device,
-               'max_epochs': args.epochs, 'logdir': logdir, 'visualizer': visualizer}
+               'max_epochs': args.epochs, 'logdir': logdir, 'visualizer': visualizer,
+               }
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
     run_experiment(agents)
