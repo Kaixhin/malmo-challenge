@@ -132,7 +132,8 @@ def run_experiment(agents_def):
     sync = Event()
 
     for agent in agents_def:
-        p = Thread(target=agent_factory, kwargs=agent.update({'sync': sync}))
+        agent.update({'sync': sync})
+        p = Thread(target=agent_factory, kwargs=agent)
         p.start()
 
         # Give the server time to start
