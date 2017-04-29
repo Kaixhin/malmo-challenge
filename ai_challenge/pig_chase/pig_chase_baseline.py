@@ -99,6 +99,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
             max_training_steps = EPOCH_SIZE * max_epochs
             for step in six.moves.range(1, max_training_steps+1):
+                print('Step: %d/%d' % (step, max_training_steps))
 
                 # Externally finished experiment, abort
                 if sync.is_set():
@@ -121,6 +122,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
     except Exception:
         pass
     finally:
+        print("Dispatch end")
         sync.set()
 
 
