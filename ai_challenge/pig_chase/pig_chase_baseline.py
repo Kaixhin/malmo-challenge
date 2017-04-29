@@ -22,7 +22,7 @@ import sys
 from argparse import ArgumentParser
 from datetime import datetime
 from os import path
-from threading import Thread, active_count
+from threading import Thread, active_count, Event
 from time import sleep
 
 from malmopy.agent import RandomAgent
@@ -46,7 +46,7 @@ EPOCH_SIZE = 100
 
 
 def agent_factory(name, role, baseline_agent, clients, max_epochs,
-                  logdir, visualizer):
+                  logdir, visualizer, sync):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
@@ -67,7 +67,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         reward = 0
         agent_done = False
 
-        while True:
+        while not sync.is_set():
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
@@ -114,15 +114,17 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
             agent.inject_summaries(step)
 
+        sync.set()
 
 def run_experiment(agents_def):
     assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)'\
                 % len(agents_def)
 
     processes = []
+    sync = Event()
+
     for agent in agents_def:
-        p = Thread(target=agent_factory, kwargs=agent)
-        p.daemon = True
+        p = Thread(target=agent_factory, kwargs=agent.merge({'sync': sync}))
         p.start()
 
         # Give the server time to start
@@ -133,8 +135,7 @@ def run_experiment(agents_def):
 
     try:
         # wait until only the challenge agent is left
-        while active_count() > 2:
-            sleep(0.1)
+        sync.wait()
     except KeyboardInterrupt:
         print('Caught control-c - shutting down.')
 
