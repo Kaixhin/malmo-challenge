@@ -1,22 +1,36 @@
 # The Malmo Collaborative AI Challenge - Team Pig Catcher
 
-2500 chars max
+## Approach
 
-# Approach
+The challenge involves two agents who can collaborate to complete a common objective, or defect at the expense of the other agent. This is similar to the famous Prisoner's Dilemna, especially as the agents do not have a common communication method. The aim then is to create one agent that can effectively work with a variety of other agents, without knowing their policies.
 
-TODO
+By treating the other agent as part of the environment, we can use reinforcement learning, and simply aim to maximise the reward of our agent; in any case, given the Nash equilibrium of the challenge, in nearly all situations our agent should aim to collaborate. Our approach takes a deep reinforcement learning algorithm - the asynchronous advantage actor-critic (A3C) [[1]](#references) with generalised advantage estimation (GAE) [[2]](#references) - and uses self-play to improve itself. In addition, several of the asynchronous agents are trained with a variety of baseline agents provided in order to increase the diversity of the partners that it sees. Ideally we would construct and train a wide variety of stronger agents, as different trade-offs in reinforcement learning can result in different tactics [[3]](#references).
 
-# Design Decisions
+## Design Decisions
 
-TODO
+We implemented the A3C algorithm [[1]](#references) with GAE [[2]](#references) based on reference code [[4]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[5]](#references).
 
-# Instructions
+## Instructions
 
-TODO
+- [Python 3](https://www.python.org/)
+- [PyTorch](http://pytorch.org/)
+- [OpenAI Gym](https://gym.openai.com/)
 
-# Video
+Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process.
+
+## Video
 
 Approx 1-3 mins.
+
+## References
+
+[1] [Asynchronous Methods for Deep Reinforcement Learning](http://arxiv.org/abs/1602.01783)  
+[2] [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)  
+[3] [Beating the World’s Best at Super Smash Bros. Melee with Deep Reinforcement Learning]()  
+[4] [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)  
+[5] [Learning to Navigate in Complex Environments](https://arxiv.org/abs/1611.03673)  
+
+---
 
 ---
 
