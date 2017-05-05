@@ -1,4 +1,24 @@
-# The Malmo Collaborative AI Challenge
+# The Malmo Collaborative AI Challenge - Team Pig Catcher
+
+2500 chars max
+
+# Approach
+
+TODO
+
+# Design Decisions
+
+TODO
+
+# Instructions
+
+TODO
+
+# Video
+
+Approx 1-3 mins.
+
+---
 
 This repository contains the task definition and example code for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/).
 This challenge is organized to encourage research in collaborative AI - to work towards AI agents 
