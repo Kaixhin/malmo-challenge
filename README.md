@@ -2,19 +2,24 @@
 
 ## Approach
 
-The challenge involves two agents who can collaborate to complete a common objective, or defect at the expense of the other agent. This is similar to the famous Prisoner's Dilemna, especially as the agents do not have a common communication method. The aim then is to create one agent that can effectively work with a variety of other agents, without knowing their policies.
+The challenge involves two agents who can *cooperate* to complete a common objective, or *defect* at the expense of the other agent. This is somewhat similar to the famous Prisoner's dilemma, especially as the agents do not have a common communication method. However, the optimal policy for the challenge, based on stag hunt [[1]](#references), depends on the policy of the other agent, as simpler agents may choose to defect, whilst smarter agents can successfully work to catch the stag. Not knowing the other agent's policy, the optimal solution is then based on *modelling* the other agent's policy.
 
-By treating the other agent as part of the environment, we can use reinforcement learning, and simply aim to maximise the reward of our agent; in any case, given the Nash equilibrium of the challenge, in nearly all situations our agent should aim to collaborate. Our approach takes a deep reinforcement learning algorithm - the asynchronous advantage actor-critic (A3C) [[1]](#references) with generalised advantage estimation (GAE) [[2]](#references) - and uses self-play to improve itself. In addition, several of the asynchronous agents are trained with a variety of baseline agents provided in order to increase the diversity of the partners that it sees. Ideally we would construct and train a wide variety of stronger agents, as different trade-offs in reinforcement learning can result in different tactics [[3]](#references).
+Alternatively, the challenge can be considered a *sequential social dilemma* [[2]](#references), as goals could change over time - if cooperating will fail in the time left, it would actually be best to defect. On this note, a large difference in capability can (in some games) lead to the smarter agent defecting.
+
+That said, by treating the other agent as part of the environment, we can still use model-free reinforcement learning, and simply aim to maximise the reward of our agent; in any case, given the reward structure of the challenge, in nearly all situations our agent should aim to collaborate. The aim then is to create one agent that can effectively work with a variety of other agents, without knowing their policies. Our approach takes a deep reinforcement learning algorithm - the actor-critic with experience replay (ACER) [[3]](#references) - and uses self-play to improve itself. In addition, several of the asynchronous agents are trained with a variety of baseline agents provided in order to increase the diversity of the partners that it sees. Ideally we would construct and train a wide variety of stronger agents, as different trade-offs in reinforcement learning can result in different tactics [[4]](#references).
 
 ## Design Decisions
 
-We implemented the A3C algorithm [[1]](#references) with GAE [[2]](#references) based on reference code [[4]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[5]](#references).
+We implemented the ACER algorithm [[3]](#references) based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references).
 
 ## Instructions
 
-- [Python 3](https://www.python.org/)
+The dependencies are:
+
+- [Python](https://www.python.org/)
 - [PyTorch](http://pytorch.org/)
 - [OpenAI Gym](https://gym.openai.com/)
+- [Plotly](https://plot.ly/python/)
 
 Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process.
 
@@ -24,11 +29,13 @@ Approx 1-3 mins.
 
 ## References
 
-[1] [Asynchronous Methods for Deep Reinforcement Learning](http://arxiv.org/abs/1602.01783)  
-[2] [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)  
-[3] [Beating the World’s Best at Super Smash Bros. Melee with Deep Reinforcement Learning]()  
-[4] [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)  
-[5] [Learning to Navigate in Complex Environments](https://arxiv.org/abs/1611.03673)  
+[1] [Game Theory of Mind](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1000254)  
+[2] [Multi-agent Reinforcement Learning in Sequential Social Dilemmas](https://arxiv.org/abs/1702.03037)  
+[3] [Sample Efficient Actor-Critic with Experience Replay](https://arxiv.org/abs/1611.01224)  
+[4] [Beating the World’s Best at Super Smash Bros. Melee with Deep Reinforcement Learning](https://arxiv.org/abs/1702.06230)  
+[5] [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)  
+[6] [pfnet/ChainerRL](https://github.com/pfnet/chainerrl)  
+[7] [Learning to Navigate in Complex Environments](https://arxiv.org/abs/1611.03673)  
 
 ---
 
