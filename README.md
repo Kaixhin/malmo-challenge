@@ -12,6 +12,8 @@ That said, by treating the other agent as part of the environment, we can still 
 
 We implemented the ACER algorithm [[3]](#references) based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references).
 
+We also introduce a novel contribution - a batch version of ACER - as off-policy learning relies on sampling trajectories from experience replay memory. We collect a batch of trajectories, and then truncate them to match the smallest trajectory retrieved. This increases stability, especially as the length of most of the saved trajectories max out; for this challenge in particular, with a fixed episode length, we receive this benefit from the start of off-policy training.
+
 ## Instructions
 
 The dependencies are:
