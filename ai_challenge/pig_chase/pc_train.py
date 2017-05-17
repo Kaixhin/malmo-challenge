@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import random
 import gym
@@ -5,9 +6,9 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
-from memory import EpisodicReplayMemory
-from model import ActorCritic
-from utils import action_to_one_hot, extend_input, state_to_tensor
+from pc_memory import EpisodicReplayMemory
+from pc_model import ActorCritic
+from pc_utils import action_to_one_hot, extend_input, state_to_tensor
 
 
 # Knuth's algorithm for generating Poisson samples

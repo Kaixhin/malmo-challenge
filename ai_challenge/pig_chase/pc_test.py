@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import time
 from datetime import datetime
 import gym
 import torch
 from torch.autograd import Variable
 
-from model import ActorCritic
-from utils import action_to_one_hot, extend_input, state_to_tensor, plot_line
+from pc_model import ActorCritic
+from pc_utils import action_to_one_hot, extend_input, state_to_tensor, plot_line
 
 
 def test(rank, args, T, shared_model):

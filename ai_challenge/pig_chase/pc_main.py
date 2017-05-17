@@ -6,17 +6,17 @@ import torch
 from torch import multiprocessing as mp
 # TODO: Consider using Visdom
 
-from model import ActorCritic
-from optim import SharedRMSprop
-from train import train
-from test import test
-from utils import Counter
+from pc_model import ActorCritic
+from pc_optim import SharedRMSprop
+from pc_train import train
+from pc_test import test
+from pc_utils import Counter
 
 
 parser = argparse.ArgumentParser(description='A3C')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--env', type=str, default='CartPole-v1', metavar='ENV', help='OpenAI Gym environment')
-parser.add_argument('--num-processes', type=int, default=6, metavar='N', help='Number of training async agents (does not include single validation agent)')
+parser.add_argument('--num-processes', type=int, default=1, metavar='N', help='Number of training async agents (does not include single validation agent)')
 parser.add_argument('--T-max', type=int, default=1e6, metavar='STEPS', help='Number of training steps')
 parser.add_argument('--t-max', type=int, default=200, metavar='STEPS', help='Max number of forward steps for A3C before update')
 parser.add_argument('--max-episode-length', type=int, default=500, metavar='LENGTH', help='Maximum episode length')
