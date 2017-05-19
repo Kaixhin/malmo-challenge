@@ -4,12 +4,11 @@ import random
 import torch
 from torch import nn
 from torch.autograd import Variable
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
-
+from pc_environment import Env
 from pc_memory import EpisodicReplayMemory
 from pc_model import ActorCritic
-from pc_utils import action_to_one_hot, extend_input, state_to_tensor
+from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, state_to_tensor
 
 
 # Knuth's algorithm for generating Poisson samples
@@ -87,14 +86,13 @@ def _trust_region_loss(model, ref_model, distribution, ref_distribution, loss, t
 # Trains model
 def _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, old_policies=None):
   off_policy = old_policies is not None
-  action_size = policies[0].size(1)
   policy_loss, value_loss = 0, 0
 
   # Calculate n-step returns in forward view, stepping backwards from the last state
   t = len(rewards)
   for i in reversed(range(t)):
     # Importance sampling weights ρ ← π(∙|s_i) / µ(∙|s_i); 1 for on-policy
-    rho = off_policy and policies[i].detach() / old_policies[i] or Variable(torch.ones(1, action_size))
+    rho = off_policy and policies[i].detach() / old_policies[i] or Variable(torch.ones(1, ACTION_SIZE))
 
     # Qret ← r_i + γQret
     Qret = rewards[i] + args.discount * Qret
@@ -141,10 +139,8 @@ def _train(args, T, model, shared_model, shared_average_model, optimiser, polici
 def train(rank, args, T, shared_model, shared_average_model, optimiser):
   torch.manual_seed(args.seed + rank)
 
-  env = gym.make(args.env)
-  env.seed(args.seed + rank)
-  action_size = env.action_space.n
-  model = ActorCritic(env.observation_space, env.action_space, args.hidden_size)
+  env = Env(rank)
+  model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
   model.train()
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)
@@ -177,7 +173,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
 
       while not done and t - t_start < args.t_max:
         # Calculate policy and values
-        input = extend_input(state, action_to_one_hot(action, action_size), reward, episode_length)
+        input = extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length)
         policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
         average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
 
@@ -210,7 +206,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         Qret = Variable(torch.zeros(1, 1))
 
         # Save terminal state for offline training
-        memory.append(extend_input(state, action_to_one_hot(action, action_size), reward, episode_length), None, None, None)
+        memory.append(extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length), None, None, None)
       else:
         # Qret = V(s_i; θ) for non-terminal s
         _, _, Qret, _ = model(Variable(input), (hx, cx))

@@ -3,23 +3,17 @@ import time
 from datetime import datetime
 import torch
 from torch.autograd import Variable
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
+from pc_environment import Env
 from pc_model import ActorCritic
-from pc_utils import action_to_one_hot, extend_input, state_to_tensor, plot_line
+from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, state_to_tensor, plot_line
 
 
 def test(rank, args, T, shared_model):
   torch.manual_seed(args.seed + rank)
 
-  builder = PigChaseSymbolicStateBuilder()
-  env = PigChaseEnvironment(clients, builder, role=role, randomize_positions=True)
-
-
-  env = gym.make(args.env)
-  env.seed(args.seed + rank)
-  action_size = env.action_space.n
-  model = ActorCritic(env.observation_space, env.action_space, args.hidden_size)
+  env = Env(rank)
+  model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
   model.eval()
 
   can_test = True  # Test flag
@@ -52,7 +46,7 @@ def test(rank, args, T, shared_model):
             env.render()
 
           # Calculate policy
-          input = extend_input(state, action_to_one_hot(action, action_size), reward, episode_length)
+          input = extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length)
           policy, _, _, (hx, cx) = model(Variable(input, volatile=True), (hx.detach(), cx.detach()))  # Break graph for memory efficiency
 
           # Choose action greedily

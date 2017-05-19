@@ -4,6 +4,10 @@ from plotly.graph_objs import Scatter, Line
 import torch
 from torch import multiprocessing as mp
 
+# Constants
+STATE_SIZE = (3, 18, 18)
+ACTION_SIZE = 3
+
 
 # Global counter
 class Counter():

@@ -5,16 +5,18 @@ from torch.nn import init
 
 
 class ActorCritic(nn.Module):
-  def __init__(self, observation_space, action_space, hidden_size):
+  def __init__(self, observation_size, action_size, hidden_size):
     super(ActorCritic, self).__init__()
-    self.state_size = observation_space
-    self.action_size = action_space
+    self.state_size = sum(observation_size)
+    self.action_size = action_size
 
     self.elu = nn.ELU(inplace=True)
     self.softmax = nn.Softmax()
 
     # Pass state into model body
-    self.fc1 = nn.Linear(self.state_size, hidden_size)
+    self.fc1 = nn.Linear(self.state_size, 1024)
+    self.fc2 = nn.Linear(1024, 256)
+    self.fc3 = nn.Linear(256, hidden_size)
     # Pass previous action, reward and timestep directly into LSTM
     self.lstm = nn.LSTMCell(hidden_size + self.action_size + 2, hidden_size)
     self.fc_actor = nn.Linear(hidden_size, self.action_size)
@@ -36,6 +38,8 @@ class ActorCritic(nn.Module):
   def forward(self, x, h):
     state, extra = x.narrow(1, 0, self.state_size), x.narrow(1, self.state_size, self.action_size + 2)
     x = self.elu(self.fc1(state))
+    x = self.elu(self.fc2(x))
+    x = self.elu(self.fc3(x))
     h = self.lstm(torch.cat((x, extra), 1), h)  # h is (hidden state, cell state)
     x = h[0]
     policy = self.softmax(self.fc_actor(x)).clamp(max=1 - 1e-20)  # Prevent 1s and hence NaNs
