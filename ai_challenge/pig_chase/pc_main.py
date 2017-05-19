@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import argparse
 import os
-import gym
 import torch
 from torch import multiprocessing as mp
-# TODO: Consider using Visdom
+from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 from pc_model import ActorCritic
 from pc_optim import SharedRMSprop
@@ -54,15 +53,16 @@ if __name__ == '__main__':
   torch.manual_seed(args.seed)
   T = Counter()  # Global shared counter
 
+  # Constants
+  OBS_SPACE = 9 * 9
+  ACT_SPACE = 3
   # Create shared network
-  env = gym.make(args.env)
-  shared_model = ActorCritic(env.observation_space, env.action_space, args.hidden_size)
-  shared_model.share_memory()
+  shared_model = ActorCritic(OBS_SPACE, ACT_SPACE, args.hidden_size)
   if args.model and os.path.isfile(args.model):
     # Load pretrained weights
     shared_model.load_state_dict(torch.load(args.model))
   # Create average network
-  shared_average_model = ActorCritic(env.observation_space, env.action_space, args.hidden_size)
+  shared_average_model = ActorCritic(OBS_SPACE, ACT_SPACE, args.hidden_size)
   shared_average_model.load_state_dict(shared_model.state_dict())
   shared_average_model.share_memory()
   for param in shared_average_model.parameters():
@@ -70,7 +70,6 @@ if __name__ == '__main__':
   # Create optimiser for shared network parameters with shared statistics
   optimiser = SharedRMSprop(shared_model.parameters(), lr=args.lr, alpha=args.rmsprop_decay)
   optimiser.share_memory()
-  env.close()
 
   # Start validation agent
   processes = []

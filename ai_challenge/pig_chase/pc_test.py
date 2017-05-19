@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
 from datetime import datetime
-import gym
 import torch
 from torch.autograd import Variable
+from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 from pc_model import ActorCritic
 from pc_utils import action_to_one_hot, extend_input, state_to_tensor, plot_line
@@ -11,6 +11,10 @@ from pc_utils import action_to_one_hot, extend_input, state_to_tensor, plot_line
 
 def test(rank, args, T, shared_model):
   torch.manual_seed(args.seed + rank)
+
+  builder = PigChaseSymbolicStateBuilder()
+  env = PigChaseEnvironment(clients, builder, role=role, randomize_positions=True)
+
 
   env = gym.make(args.env)
   env.seed(args.seed + rank)
