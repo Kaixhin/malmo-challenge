@@ -60,7 +60,7 @@ class Env():
       os.killpg(os.getpgid(process.pid), signal.SIGTERM)
 
   def _launch_malmo(self, malmo_path, port):
-    process = subprocess.Popen(malmo_path + ' -port ' + str(port), close_fds=True, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+    process = subprocess.Popen(malmo_path + ' -port ' + str(port), close_fds=True, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=os.setsid)
     self.processes.append(process)
     launched = False
     for _ in range(100):
