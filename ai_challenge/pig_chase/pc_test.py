@@ -71,7 +71,7 @@ def test(rank, args, T, shared_model):
             sum(avg_episode_lengths) / args.evaluation_episodes))
       rewards.append(avg_rewards)  # Keep all evaluations
       steps.append(t_start)
-      plot_line(steps, rewards, 'Average Reward')  # Plot rewards
+      plot_line(steps, rewards, 'rewards.html', 'Average Reward')  # Plot rewards
       torch.save(model.state_dict(), 'model.pth')  # Save model params
       can_test = False  # Finish testing
       if args.evaluate:
