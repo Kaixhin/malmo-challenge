@@ -84,9 +84,12 @@ def _trust_region_loss(model, ref_model, distribution, ref_distribution, loss, t
 
 
 # Trains model
-def _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, old_policies=None):
+def _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, target_class, pred_class, old_policies=None):
   off_policy = old_policies is not None
   policy_loss, value_loss = 0, 0
+
+  # Train classification loss
+  class_loss = (pred_class.log() * target_class + (1 - target_class) * (1 - pred_class).log()).mean()
 
   # Calculate n-step returns in forward view, stepping backwards from the last state
   t = len(rewards)
@@ -132,7 +135,7 @@ def _train(args, T, model, shared_model, shared_average_model, optimiser, polici
     policy_loss /= t
     value_loss /= t
   # Update networks
-  _update_networks(args, T, model, shared_model, shared_average_model, policy_loss + value_loss, optimiser)
+  _update_networks(args, T, model, shared_model, shared_average_model, policy_loss + value_loss + class_loss, optimiser)
 
 
 # Acts and trains model
@@ -144,6 +147,9 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
   model.train()
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)
+
+  # get label from the environment
+  cls_id = env.get_class_label
 
   t = 1  # Thread step counter
   done = True  # Start new episode
@@ -172,10 +178,19 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
       policies, Qs, Vs, actions, rewards, average_policies = [], [], [], [], [], []
 
       while not done and t - t_start < args.t_max:
+        # get label from the environment
+        cls_id = env.get_class_label
+
         # Calculate policy and values
         input = extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length)
-        policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
-        average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+        #policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
+        policy1, Q1, V1, policy2, Q2, V2, cls, (hx, cx) = model(Variable(input), (hx, cx))
+        #average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+        average_policy1, _, _, average_policy2, _, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+        policy = policy1 if cls_id == 0 else policy2
+        average_policy = average_policy1 if cls_id == 0 else average_policy2
+        Q = Q1 if cls_id == 0 else Q2
+        V = V1 if cls_id == 0 else V2
 
         # Sample action
         action = policy.multinomial().data[0, 0]  # Graph broken as loss for stochastic action calculated manually
@@ -187,7 +202,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         episode_length += 1  # Increase episode counter
 
         # Save (beginning part of) transition for offline training
-        memory.append(input, action, reward, policy.data)  # Save just tensors
+        memory.append(input, action, reward, policy.data, cls_id)  # Save just tensors
         # Save outputs for online training
         [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies),
                                            (policy, Q, V, Variable(torch.LongTensor([[action]])), Variable(torch.Tensor([[reward]])), average_policy))]
@@ -205,14 +220,15 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         Qret = Variable(torch.zeros(1, 1))
 
         # Save terminal state for offline training
-        memory.append(extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length), None, None, None)
+        memory.append(extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length), None, None, None, cls_id)
       else:
         # Qret = V(s_i; θ) for non-terminal s
-        _, _, Qret, _ = model(Variable(input), (hx, cx))
+        _, _, Qret1, _, _, Qret2, _, _= model(Variable(input), (hx, cx))
+        Qret = Qret1 if cls_id == 0 else Qret2
         Qret = Qret.detach()
 
       # Train the network on-policy
-      _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies)
+      _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, cls_id, cls)
 
       # Finish on-policy episode
       if done:
@@ -239,10 +255,18 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
           action = Variable(torch.LongTensor([trajectory.action for trajectory in trajectories[i]])).unsqueeze(1)
           reward = Variable(torch.Tensor([trajectory.reward for trajectory in trajectories[i]])).unsqueeze(1)
           old_policy = Variable(torch.cat((trajectory.policy for trajectory in trajectories[i]), 0))
+          env_id = trajectory.env_cls
 
           # Calculate policy and values
-          policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
-          average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+          #policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
+          policy1, Q1, V1, policy2, Q2, V2, cls, (hx, cx) = model(Variable(input), (hx, cx))
+          #average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+          average_policy1, _, _, average_policy2, _, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
+
+          policy = policy1 if env_id == 0 else policy2
+          average_policy = average_policy1 if env_id == 0 else average_policy2
+          Q = Q1 if env_id == 0 else Q2
+          V = V1 if env_id == 0 else V2
 
           # Save outputs for offline training
           [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies, old_policies),
@@ -253,12 +277,13 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
           done = Variable(torch.Tensor([trajectory.action is None for trajectory in trajectories[i + 1]]).unsqueeze(1))
 
         # Do forward pass for all transitions
-        _, _, Qret, _ = model(Variable(next_input), (hx, cx))
+        _, _, Qret1, _, _, Qret2, _, _= model(Variable(input), (hx, cx))
+        Qret = Qret1 if env_id == 0 else Qret2
         # Qret = 0 for terminal s, V(s_i; θ) otherwise
         Qret = ((1 - done) * Qret).detach()
 
         # Train the network off-policy
         _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs,
-               actions, rewards, Qret, average_policies, old_policies=old_policies)
+               actions, rewards, Qret, average_policies, env_id, cls, old_policies=old_policies)
 
   env.close()

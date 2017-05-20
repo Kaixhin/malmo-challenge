@@ -60,11 +60,13 @@ class PigChaseChallengeAgent(BaseAgent):
                                          visualizer = visualizer))
         self._agents.append(RandomAgent(name, nb_actions,
                                         visualizer = visualizer))
+        self.current_agent_id = 0
         self.current_agent = self._select_agent(P_FOCUSED)
 
     def _select_agent(self, p_focused):
-        return self._agents[np.random.choice(range(len(self._agents)),
-                                             p = [p_focused, 1. - p_focused])]
+        self.current_agent_id = np.random.choice(range(len(self._agents)),
+                                             p = [p_focused, 1. - p_focused])
+        return self._agents[self.current_agent_id]
 
     def act(self, new_state, reward, done, is_training=False):
         if done:

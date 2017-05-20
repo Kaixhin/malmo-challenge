@@ -32,7 +32,7 @@ class Env():
     agent_port, partner_port = 10000 + rank, 20000 + rank
     clients = [('127.0.0.1', agent_port), ('127.0.0.1', partner_port)]
     self.processes = []
-    
+
     # Assume Minecraft launched if port has listener, launch otherwise
     if not port_has_listener(agent_port):
       self._launch_malmo(malmo_path, agent_port)
@@ -44,6 +44,9 @@ class Env():
     p = mp.Process(target=self._run_challenge_agent, args=(clients,))
     p.start()
     time.sleep(5)
+
+  def get_class_label(self):
+    return self._agent.current_agent_id
 
   def reset(self, raw_observation=False):
     if raw_observation:
@@ -92,5 +95,5 @@ class Env():
   # Run challenge agent
   def _run_challenge_agent(self, clients):
     env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(), role=0, randomize_positions=True)
-    agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
-    self._agent_loop(agent, env)
+    self._agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
+    self._agent_loop(self._agent, env)
