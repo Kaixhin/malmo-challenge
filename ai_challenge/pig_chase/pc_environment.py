@@ -2,8 +2,8 @@ import os
 from os import path
 import signal
 import socket
-import subprocess
 import time
+import docker
 import torch
 from torch import multiprocessing as mp
 from common import ENV_AGENT_NAMES
@@ -27,17 +27,17 @@ def _map_to_observation(observation):
 
 class Env():
   def __init__(self, rank):
-    # Find Malmo directory
-    malmo_path = path.join(path.dirname(os.environ['MALMO_XSD_PATH']), 'Minecraft', 'launchClient.sh')
+    docker_client = docker.from_env()
     agent_port, partner_port = 10000 + rank, 20000 + rank
     clients = [('127.0.0.1', agent_port), ('127.0.0.1', partner_port)]
-    self.processes = []
     
     # Assume Minecraft launched if port has listener, launch otherwise
     if not port_has_listener(agent_port):
-      self._launch_malmo(malmo_path, agent_port)
+      self._launch_malmo(docker_client, agent_port)
+    print('Malmo running on port ' + str(agent_port))
     if not port_has_listener(partner_port):
-      self._launch_malmo(malmo_path, partner_port)
+      self._launch_malmo(docker_client, partner_port)
+    print('Malmo running on port ' + str(partner_port))
 
     # Set up internal environment
     self._env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(gray=False), role=1, randomize_positions=True)
@@ -56,12 +56,10 @@ class Env():
     return _map_to_observation(observation), reward, done, None  # Do not return any extra info
 
   def close(self):
-    for process in self.processes:
-      os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+    return  # TODO: Kill Docker containers
 
-  def _launch_malmo(self, malmo_path, port):
-    process = subprocess.Popen(malmo_path + ' -port ' + str(port), close_fds=True, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=os.setsid)
-    self.processes.append(process)
+  def _launch_malmo(self, client, port):
+    client.containers.run('malmo', '-port ' + str(port), detach=True, network_mode='host')
     launched = False
     for _ in range(100):
       time.sleep(3)
