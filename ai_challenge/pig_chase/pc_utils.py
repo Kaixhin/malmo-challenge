@@ -24,11 +24,6 @@ class Counter():
       return self.val.value
 
 
-# Converts a state from the OpenAI Gym (a numpy array) to a batch tensor
-def state_to_tensor(state):
-  return torch.from_numpy(state).float().unsqueeze(0)
-
-
 # Converts an action index and action space size into a one-hot batch tensor
 def action_to_one_hot(action_index, action_size):
   action = torch.zeros(1, action_size)
@@ -40,7 +35,7 @@ def action_to_one_hot(action_index, action_size):
 def extend_input(state, action, reward, timestep):
   reward = torch.Tensor([reward]).unsqueeze(0)
   timestep = torch.Tensor([timestep]).unsqueeze(0)
-  return torch.cat((state, action, reward, timestep), 1)
+  return torch.cat((state.view(1, -1), action, reward, timestep), 1)
 
 
 # Plots min, max and mean + standard deviation bars of a population over time

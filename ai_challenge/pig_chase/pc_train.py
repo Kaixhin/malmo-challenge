@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from pc_environment import Env
 from pc_memory import EpisodicReplayMemory
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, state_to_tensor
+from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input
 
 
 # Knuth's algorithm for generating Poisson samples
@@ -161,7 +161,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         hx, avg_hx = Variable(torch.zeros(1, args.hidden_size)), Variable(torch.zeros(1, args.hidden_size))
         cx, avg_cx = Variable(torch.zeros(1, args.hidden_size)), Variable(torch.zeros(1, args.hidden_size))
         # Reset environment and done flag
-        state = state_to_tensor(env.reset())
+        state = env.reset()
         action, reward, done, episode_length = 0, 0, False, 0
       else:
         # Perform truncated backpropagation-through-time (allows freeing buffers after backwards call)
@@ -182,7 +182,6 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
 
         # Step
         next_state, reward, done, _ = env.step(action)
-        next_state = state_to_tensor(next_state)
         reward = args.reward_clip and min(max(reward, -1), 1) or reward  # Optionally clamp rewards
         done = done or episode_length >= args.max_episode_length  # Stop episodes at a max length
         episode_length += 1  # Increase episode counter

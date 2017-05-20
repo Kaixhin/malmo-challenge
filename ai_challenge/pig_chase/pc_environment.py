@@ -19,10 +19,10 @@ def port_has_listener(port):
   return result == 0
 
 
-# Return state in C H W format
+# Return state in C H W format (as a batch)
 def _map_to_observation(observation):
   observation = torch.Tensor(observation)
-  return observation.permute(2, 1, 0)
+  return observation.permute(2, 1, 0).contiguous().unsqueeze(0)
 
 
 class Env():

@@ -6,7 +6,7 @@ from torch.autograd import Variable
 
 from pc_environment import Env
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, state_to_tensor, plot_line
+from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, plot_line
 
 
 def test(rank, args, T, shared_model):
@@ -37,7 +37,7 @@ def test(rank, args, T, shared_model):
             hx = Variable(torch.zeros(1, args.hidden_size), volatile=True)
             cx = Variable(torch.zeros(1, args.hidden_size), volatile=True)
             # Reset environment and done flag
-            state = state_to_tensor(env.reset())
+            state = env.reset()
             action, reward, done, episode_length = 0, 0, False, 0
             reward_sum = 0
 
@@ -54,7 +54,6 @@ def test(rank, args, T, shared_model):
 
           # Step
           state, reward, done, _ = env.step(action)
-          state = state_to_tensor(state)
           reward_sum += reward
           done = done or episode_length >= args.max_episode_length  # Stop episodes at a max length
           episode_length += 1  # Increase episode counter
