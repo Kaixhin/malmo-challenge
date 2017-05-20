@@ -4,6 +4,7 @@ import random
 import torch
 from torch import nn
 from torch.autograd import Variable
+from torch.nn import functional as F
 
 from pc_environment import Env
 from pc_memory import EpisodicReplayMemory
@@ -89,7 +90,7 @@ def _train(args, T, model, shared_model, shared_average_model, optimiser, polici
   policy_loss, value_loss = 0, 0
 
   # Train classification loss
-  class_loss = (pred_class.log() * target_class + (1 - target_class) * (1 - pred_class).log()).mean()
+  class_loss = F.binary_cross_entropy(pred_class, target_class)
 
   # Calculate n-step returns in forward view, stepping backwards from the last state
   t = len(rewards)
