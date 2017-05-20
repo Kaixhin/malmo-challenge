@@ -77,7 +77,6 @@ def test(rank, args, T, shared_model):
       if args.evaluate:
         return
     else:
-      print('T: ' + str(T.value()))
       if T.value() - t_start >= args.evaluation_interval:
         can_test = True
 
