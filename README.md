@@ -18,12 +18,11 @@ We also introduce a novel contribution - a batch version of ACER - as off-policy
 
 The dependencies are:
 
-- [Python](https://www.python.org/)
+- [Python 2](https://www.python.org/)
 - [PyTorch](http://pytorch.org/)
-- [OpenAI Gym](https://gym.openai.com/)
 - [Plotly](https://plot.ly/python/)
 
-Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process.
+Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process. Automatically opens up Minecraft instances with ports in the range [10000, 10000 + num_processes] and  [20000, 20000 + num_processes].
 
 ## Video
 
