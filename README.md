@@ -2,15 +2,18 @@
 
 ## Approach
 
-The challenge involves two agents who can *cooperate* to complete a common objective, or *defect* at the expense of the other agent. This is somewhat similar to the famous Prisoner's dilemma, especially as the agents do not have a common communication method. However, the optimal policy for the challenge, based on stag hunt [[1]](#references), depends on the policy of the other agent, as simpler agents may choose to defect, whilst smarter agents can successfully work to catch the stag. Not knowing the other agent's policy, the optimal solution is then based on *modelling* the other agent's policy.
+The challenge involves two agents who can *cooperate* to complete a common objective, or *defect* at the expense of the other agent. This is somewhat similar to the famous Prisoner's dilemma, especially as the agents do not have a common communication method. However, the optimal policy for the challenge, based on stag hunt [[1]](#references), depends on the policy of the other agent, as simpler agents may choose to defect, whilst smarter agents can successfully work to catch the stag. Not knowing the other agent's policy, the optimal solution is then based on *modelling* the other agent's policy. Similarly, the challenge can be considered a *sequential social dilemma* [[2]](#references), as goals could change over time - if cooperating will fail in the time left, it would actually be best to defect (or technically, wait for the environment to time out, given the current reward structure).
 
-Alternatively, the challenge can be considered a *sequential social dilemma* [[2]](#references), as goals could change over time - if cooperating will fail in the time left, it would actually be best to defect. On this note, a large difference in capability can (in some games) lead to the smarter agent defecting.
+That said, by treating the other agent as part of the environment, we can still use model-free reinforcement learning, and simply aim to maximise the reward of our agent. As a baseline we take a deep reinforcement learning algorithm - the actor-critic with experience replay (ACER) [[3]](#references) - and train it against the evaluation agent (which randomly uses a "focused" or random strategy every episode).
 
-That said, by treating the other agent as part of the environment, we can still use model-free reinforcement learning, and simply aim to maximise the reward of our agent; in any case, given the reward structure of the challenge, in nearly all situations our agent should aim to collaborate. The aim then is to create one agent that can effectively work with a variety of other agents, without knowing their policies. Our approach takes a deep reinforcement learning algorithm - the actor-critic with experience replay (ACER) [[3]](#references) - and uses self-play to improve itself. In addition, several of the asynchronous agents are trained with a variety of baseline agents provided in order to increase the diversity of the partners that it sees. Ideally we would construct and train a wide variety of stronger agents, as different trade-offs in reinforcement learning can result in different tactics [[4]](#references).
+Given the specifics of the evaluation agent, which is either a collaborative agent (using A* search to head for the pig) or not (a random agent), we chose to approach this challenge using *hierarchical reinforcement learning*. Specifically, we assume there are two subpolicies, one for each type of partner agent. To do so, we use option heads [[4]](#references), whereby the agent has shared features, but separate heads for different subpolicies. In this case, ACER with two subpolicies has two Q-value heads and two policy heads. To choose which subpolicy to use at any given time, the agent also has an additional classifier head that is trained (using an oracle) to distinguish which option to use. Therefore, we ask the following questions:
+
+- Can the agent distinguish between the two possible behaviours of the evaluation agent?
+- Does the agent learn qualitatively different subpolicies?
 
 ## Design Decisions
 
-We implemented the ACER algorithm [[3]](#references) based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references).
+For our baseline, we implemented the ACER algorithm [[3]](#references) based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references). Our challenge entry augments the agent further with option heads [[4]](#references), which aim to distinguish the different policies of the evaluation agent.
 
 We also introduce a novel contribution - a batch version of ACER - as off-policy learning relies on sampling trajectories from experience replay memory. We collect a batch of trajectories, and then truncate them to match the smallest trajectory retrieved. This increases stability, especially as the length of most of the saved trajectories max out; for this challenge in particular, with a fixed episode length, we receive this benefit from the start of off-policy training.
 
@@ -34,7 +37,7 @@ Approx 1-3 mins.
 [1] [Game Theory of Mind](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1000254)  
 [2] [Multi-agent Reinforcement Learning in Sequential Social Dilemmas](https://arxiv.org/abs/1702.03037)  
 [3] [Sample Efficient Actor-Critic with Experience Replay](https://arxiv.org/abs/1611.01224)  
-[4] [Beating the World’s Best at Super Smash Bros. Melee with Deep Reinforcement Learning](https://arxiv.org/abs/1702.06230)  
+[4] [Classifying Options for Deep Reinforcement Learning](https://arxiv.org/abs/1604.08153)  
 [5] [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)  
 [6] [pfnet/ChainerRL](https://github.com/pfnet/chainerrl)  
 [7] [Learning to Navigate in Complex Environments](https://arxiv.org/abs/1611.03673)  
