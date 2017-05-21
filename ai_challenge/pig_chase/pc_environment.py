@@ -1,6 +1,3 @@
-import os
-from os import path
-import signal
 import socket
 import time
 import docker
@@ -49,7 +46,7 @@ class Env():
     docker_client = docker.from_env()
     agent_port, partner_port = 10000 + rank, 20000 + rank
     clients = [('127.0.0.1', agent_port), ('127.0.0.1', partner_port)]
-    
+
     # Assume Minecraft launched if port has listener, launch otherwise
     if not _port_has_listener(agent_port):
       self._launch_malmo(docker_client, agent_port)
@@ -68,7 +65,10 @@ class Env():
     self.env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(gray=False), role=1, randomize_positions=True)
 
   def reset(self):
-    return _map_to_observation(self.env.reset())
+    observation = self.env.reset()
+    while observation is None:  # May happen if episode ended with first action of other agent
+      observation = self.env.reset()
+    return _map_to_observation(observation)
 
   def step(self, action):
     observation, reward, done = self.env.do(action)
