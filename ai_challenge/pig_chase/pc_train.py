@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from pc_environment import Env
 from pc_memory import EpisodicReplayMemory
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input
+from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input
 
 
 # Knuth's algorithm for generating Poisson samples
@@ -140,7 +140,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
   torch.manual_seed(args.seed + rank)
 
   env = Env(rank)
-  model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
+  model = ActorCritic(args.hidden_size)
   model.train()
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)

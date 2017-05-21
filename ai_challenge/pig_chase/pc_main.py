@@ -8,7 +8,7 @@ from pc_model import ActorCritic
 from pc_optim import SharedRMSprop
 from pc_train import train
 from pc_test import test
-from pc_utils import ACTION_SIZE, STATE_SIZE, Counter
+from pc_utils import Counter
 
 
 parser = argparse.ArgumentParser(description='A3C')
@@ -18,7 +18,7 @@ parser.add_argument('--num-processes', type=int, default=1, metavar='N', help='N
 parser.add_argument('--T-max', type=int, default=6e5, metavar='STEPS', help='Number of training steps')
 parser.add_argument('--t-max', type=int, default=30, metavar='STEPS', help='Max number of forward steps for A3C before update')
 parser.add_argument('--max-episode-length', type=int, default=30, metavar='LENGTH', help='Maximum episode length')
-parser.add_argument('--hidden-size', type=int, default=64, metavar='SIZE', help='Hidden size of LSTM cell')
+parser.add_argument('--hidden-size', type=int, default=256, metavar='SIZE', help='Hidden size of LSTM cell')
 parser.add_argument('--model', type=str, metavar='PARAMS', help='Pretrained model (state dict)')
 parser.add_argument('--memory-capacity', type=int, default=100000, metavar='CAPACITY', help='Experience replay memory capacity')
 parser.add_argument('--replay-ratio', type=int, default=4, metavar='r', help='Ratio of off-policy to on-policy updates')
@@ -53,12 +53,12 @@ if __name__ == '__main__':
   T = Counter()  # Global shared counter
 
   # Create shared network
-  shared_model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
+  shared_model = ActorCritic(args.hidden_size)
   if args.model and os.path.isfile(args.model):
     # Load pretrained weights
     shared_model.load_state_dict(torch.load(args.model))
   # Create average network
-  shared_average_model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
+  shared_average_model = ActorCritic(args.hidden_size)
   shared_average_model.load_state_dict(shared_model.state_dict())
   shared_average_model.share_memory()
   for param in shared_average_model.parameters():

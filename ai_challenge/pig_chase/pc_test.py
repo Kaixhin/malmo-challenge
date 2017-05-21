@@ -6,14 +6,14 @@ from torch.autograd import Variable
 
 from pc_environment import Env
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input, plot_line
+from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input, plot_line
 
 
 def test(rank, args, T, shared_model):
   torch.manual_seed(args.seed + rank)
 
   env = Env(rank)
-  model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
+  model = ActorCritic(args.hidden_size)
   model.eval()
 
   can_test = True  # Test flag
