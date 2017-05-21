@@ -72,9 +72,9 @@ def test(rank, args, T, shared_model):
       t_start = T.value()  # Reset counter
 
       metrics_acc = None
-      if T.value() == 1e5:
+      if args.evaluation_episodes == 100:
           metrics_acc = accumulators['100k']
-      if T.value() == 5e5:
+      if args.evaluation_episodes == 500:
           metrics_acc = accumulators['500k']
 
       # Evaluate over several episodes and average results
