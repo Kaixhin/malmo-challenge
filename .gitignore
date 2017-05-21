@@ -271,3 +271,4 @@ malmopy.egg-info
 ai_challenge/pig_chase/src
 ai_challenge/pig_chase/checkpoints/*.pth
 ai_challenge/pig_chase/rewards.html
+ai_challenge/pig_chase/accs.html

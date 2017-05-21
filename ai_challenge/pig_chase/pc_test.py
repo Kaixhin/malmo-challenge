@@ -119,7 +119,7 @@ def test(rank, args, T, shared_model):
           if done:
             avg_rewards.append(reward_sum)
             avg_episode_lengths.append(episode_length)
-            avg_accs.append(class_acc)
+            avg_accs.append(class_acc / episode_length)  # Normalise accuracy by episode length
             break
 
       print(('[{}] Step: {:<' + l + '} Avg. Reward: {:<8} Avg. Episode Length: {:<8} Avg. Class Acc.: {:<8}').format(
@@ -127,7 +127,7 @@ def test(rank, args, T, shared_model):
             t_start,
             sum(avg_rewards) / args.evaluation_episodes,
             sum(avg_episode_lengths) / args.evaluation_episodes,
-            sum(avg_accs) / args.evaluation_episodes / 25))
+            sum(avg_accs) / args.evaluation_episodes))
       rewards.append(avg_rewards)  # Keep all evaluations
       accs.append(avg_accs)
       # Keep all evaluations
