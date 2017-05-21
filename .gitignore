@@ -269,5 +269,5 @@ __pycache__/
 # Submission
 malmopy.egg-info
 ai_challenge/pig_chase/src
-ai_challenge/pig_chase/model.pth
+ai_challenge/pig_chase/checkpoints/*.pth
 ai_challenge/pig_chase/rewards.html

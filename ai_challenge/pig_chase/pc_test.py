@@ -72,7 +72,7 @@ def test(rank, args, T, shared_model):
       rewards.append(avg_rewards)  # Keep all evaluations
       steps.append(t_start)
       plot_line(steps, rewards, 'rewards.html', 'Average Reward')  # Plot rewards
-      torch.save(model.state_dict(), 'model.pth')  # Save model params
+      torch.save(model.state_dict(), 'checkpoints/' + str(t_start) + '.pth')  # Checkpoint model params
       can_test = False  # Finish testing
       if args.evaluate:
         return
