@@ -72,9 +72,9 @@ def test(rank, args, T, shared_model):
       t_start = T.value()  # Reset counter
 
       metrics_acc = None
-      if args.evaluation_episodes == 100:
+      if args.eval_model == 100:
           metrics_acc = accumulators['100k']
-      if args.evaluation_episodes == 500:
+      if args.eval_model == 500:
           metrics_acc = accumulators['500k']
 
       # Evaluate over several episodes and average results
@@ -140,5 +140,5 @@ def test(rank, args, T, shared_model):
 
   # if save
   leaderboard_save(accumulators,
-    'Baseline_Experiment_'+ str(args.evaluation_episodes),
-    './baseline'+str(args.evaluation_episodes)+'.json')
+    'Baseline_Experiment_'+ str(args.eval_model),
+    './baseline'+str(args.eval_model)+'.json')

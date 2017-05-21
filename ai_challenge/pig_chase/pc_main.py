@@ -41,7 +41,7 @@ parser.add_argument('--evaluate', action='store_true', help='Evaluate only')
 parser.add_argument('--evaluation-interval', type=int, default=1000, metavar='STEPS', help='Number of training steps between evaluations (roughly)')
 parser.add_argument('--evaluation-episodes', type=int, default=10, metavar='N', help='Number of evaluation episodes to average over')
 parser.add_argument('--render', action='store_true', help='Render evaluation agent')
-
+parser.add_argument('--eval_model', type=int, default=0, help='Model that is used for evaluation')
 
 if __name__ == '__main__':
   # Setup
