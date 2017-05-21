@@ -22,7 +22,7 @@ parser.add_argument('--hidden-size', type=int, default=256, metavar='SIZE', help
 parser.add_argument('--model', type=str, metavar='PARAMS', help='Pretrained model (state dict)')
 parser.add_argument('--memory-capacity', type=int, default=100000, metavar='CAPACITY', help='Experience replay memory capacity')
 parser.add_argument('--replay-ratio', type=int, default=4, metavar='r', help='Ratio of off-policy to on-policy updates')
-parser.add_argument('--replay-start', type=int, default=1000, metavar='EPISODES', help='Number of transitions to save before starting off-policy training')
+parser.add_argument('--replay-start', type=int, default=1000, metavar='STEPS', help='Number of transitions to save before starting off-policy training')
 parser.add_argument('--discount', type=float, default=0.99, metavar='γ', help='Discount factor')
 parser.add_argument('--trace-decay', type=float, default=1, metavar='λ', help='Eligibility trace decay factor')
 parser.add_argument('--trace-max', type=float, default=10, metavar='c', help='Importance weight truncation (max) value')
@@ -39,7 +39,7 @@ parser.add_argument('--no-time-normalisation', action='store_true', help='Do not
 parser.add_argument('--max-gradient-norm', type=float, default=10, metavar='VALUE', help='Max value of gradient L1 norm for gradient clipping')
 parser.add_argument('--evaluate', action='store_true', help='Evaluate only')
 parser.add_argument('--evaluation-interval', type=int, default=1000, metavar='STEPS', help='Number of training steps between evaluations (roughly)')
-parser.add_argument('--evaluation-episodes', type=int, default=10, metavar='N', help='Number of evaluation episodes to average over')
+parser.add_argument('--evaluation-episodes', type=int, default=20, metavar='N', help='Number of evaluation episodes to average over')
 parser.add_argument('--render', action='store_true', help='Render evaluation agent')
 
 

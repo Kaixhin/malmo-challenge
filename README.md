@@ -26,7 +26,7 @@ The dependencies are:
 - [Plotly](https://plot.ly/python/)
 - [Docker](https://www.docker.com/) + [docker-py](https://docker-py.readthedocs.io/en/stable/)
 
-Firstly, build the [Malmo Docker image](https://github.com/Kaixhin/malmo-challenge/tree/master/docker) (with the tag `malmo`). Secondly, enable running Docker [as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/).
+Firstly, [build the Malmo Docker image](https://github.com/Kaixhin/malmo-challenge/tree/master/docker) (with the tag `malmo`). Secondly, [enable running Docker as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/).
 
 Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process. Automatically opens up Minecraft (Docker) instances with ports in the range [10000, 10000 + num_processes] and  [20000, 20000 + num_processes].
 
