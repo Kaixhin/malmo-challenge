@@ -13,7 +13,7 @@ class EpisodicReplayMemory():
     self.position = 0
 
   def append(self, state, action, reward, policy, env_cls):
-    self.memory[self.position].append(Transition(state, action, reward, policy, env_cls))  # Save s_i, a_i, r_i+1, µ(·|s_i)
+    self.memory[self.position].append(Transition(state, action, reward, policy, env_cls))  # Save s_i, a_i, r_i+1, µ(·|s_i), class
     # Terminal states are saved with actions as None, so switch to next episode
     if action is None:
       self.memory.append([])

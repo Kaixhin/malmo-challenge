@@ -15,9 +15,9 @@ class ActorCritic(nn.Module):
     self.sigmoid = nn.Sigmoid()
 
     # Pass state into model body
-    self.conv1 = nn.Conv2d(STATE_SIZE[0], 64, 4, stride=2)
-    self.conv2 = nn.Conv2d(64, 64, 3)
-    self.fc1 = nn.Linear(2304, hidden_size)
+    self.conv1 = nn.Conv2d(STATE_SIZE[0], 32, 4, stride=2)
+    self.conv2 = nn.Conv2d(32, 32, 3)
+    self.fc1 = nn.Linear(1152, hidden_size)
     # Pass previous action, reward and timestep directly into LSTM
     self.lstm = nn.LSTMCell(hidden_size + ACTION_SIZE + 2, hidden_size)
     self.fc_actor1 = nn.Linear(hidden_size, ACTION_SIZE)

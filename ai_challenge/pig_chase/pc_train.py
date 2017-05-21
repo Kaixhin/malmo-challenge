@@ -87,10 +87,7 @@ def _trust_region_loss(model, ref_model, distribution, ref_distribution, loss, t
 # Trains model
 def _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, target_class, pred_class, old_policies=None):
   off_policy = old_policies is not None
-  policy_loss, value_loss = 0, 0
-
-  # Train classification loss
-  class_loss = F.binary_cross_entropy(pred_class, Variable(torch.Tensor(target_class)))
+  policy_loss, value_loss, class_loss = 0, 0, 0
 
   # Calculate n-step returns in forward view, stepping backwards from the last state
   t = len(rewards)
@@ -131,10 +128,14 @@ def _train(args, T, model, shared_model, shared_average_model, optimiser, polici
     # Qret ← ρ¯_a_i∙(Qret - Q(s_i, a_i; θ)) + V(s_i; θ)
     Qret = truncated_rho * (Qret - Q.detach()) + Vs[i].detach()
 
+    # Train classification loss
+    class_loss += F.binary_cross_entropy(pred_class[i], target_class)
+
   # Optionally normalise loss by number of time steps
   if not args.no_time_normalisation:
     policy_loss /= t
     value_loss /= t
+    class_loss /= t
   # Update networks
   _update_networks(args, T, model, shared_model, shared_average_model, policy_loss + value_loss + class_loss, optimiser)
 
@@ -176,12 +177,12 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         cx = cx.detach()
 
       # Lists of outputs for training
-      policies, Qs, Vs, actions, rewards, average_policies = [], [], [], [], [], []
-
+      policies, Qs, Vs, actions, rewards, average_policies, classes = [], [], [], [], [], [], []
+      
       while not done and t - t_start < args.t_max:
         # Get label from the environment
         cls_id = env.get_class_label()
-
+        
         # Calculate policy and values
         input = extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length)
         #policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
@@ -205,8 +206,8 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         # Save (beginning part of) transition for offline training
         memory.append(input, action, reward, policy.data, cls_id)  # Save just tensors
         # Save outputs for online training
-        [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies),
-                                           (policy, Q, V, Variable(torch.LongTensor([[action]])), Variable(torch.Tensor([[reward]])), average_policy))]
+        [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies, classes),
+                                           (policy, Q, V, Variable(torch.LongTensor([[action]])), Variable(torch.Tensor([[reward]])), average_policy, cls))]
 
         # Increment counters
         t += 1
@@ -229,7 +230,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         Qret = Qret.detach()
 
       # Train the network on-policy
-      _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, cls_id, cls)
+      _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs, actions, rewards, Qret, average_policies, Variable(torch.Tensor([[cls_id]])), classes)
 
       # Finish on-policy episode
       if done:
@@ -247,16 +248,17 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         cx, avg_cx = Variable(torch.zeros(args.batch_size, args.hidden_size)), Variable(torch.zeros(args.batch_size, args.hidden_size))
 
         # Lists of outputs for training
-        policies, Qs, Vs, actions, rewards, old_policies, average_policies = [], [], [], [], [], [], []
+        policies, Qs, Vs, actions, rewards, old_policies, average_policies, classes = [], [], [], [], [], [], [], []
 
         # Loop over trajectories (bar last timestep)
+        cls_id = []
         for i in range(len(trajectories) - 1):
           # Unpack first half of transition
           input = torch.cat((trajectory.state for trajectory in trajectories[i]), 0)
           action = Variable(torch.LongTensor([trajectory.action for trajectory in trajectories[i]])).unsqueeze(1)
           reward = Variable(torch.Tensor([trajectory.reward for trajectory in trajectories[i]])).unsqueeze(1)
           old_policy = Variable(torch.cat((trajectory.policy for trajectory in trajectories[i]), 0))
-          env_id = trajectory.env_cls
+          cls_id = Variable(torch.Tensor([trajectory.env_cls for trajectory in trajectories[i]])).unsqueeze(1)
 
           # Calculate policy and values
           #policy, Q, V, (hx, cx) = model(Variable(input), (hx, cx))
@@ -264,14 +266,14 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
           #average_policy, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
           average_policy1, _, _, average_policy2, _, _, _, (avg_hx, avg_cx) = shared_average_model(Variable(input), (avg_hx, avg_cx))
 
-          policy = policy1 if env_id == 0 else policy2
-          average_policy = average_policy1 if env_id == 0 else average_policy2
-          Q = Q1 if env_id == 0 else Q2
-          V = V1 if env_id == 0 else V2
+          policy = (1 - cls_id.expand_as(policy1)) * policy1 + cls_id.expand_as(policy1) * policy2
+          average_policy = (1 - cls_id.expand_as(policy1)) * average_policy1 + cls_id.expand_as(policy1) * average_policy2
+          Q = (1 - cls_id.expand_as(policy1)) * Q1 + cls_id.expand_as(policy1) * Q2
+          V = (1 - cls_id) * V1 + cls_id * V2
 
           # Save outputs for offline training
-          [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies, old_policies),
-                                             (policy, Q, V, action, reward, average_policy, old_policy))]
+          [arr.append(el) for arr, el in zip((policies, Qs, Vs, actions, rewards, average_policies, old_policies, classes),
+                                             (policy, Q, V, action, reward, average_policy, old_policy, cls))]
 
           # Unpack second half of transition
           next_input = torch.cat((trajectory.state for trajectory in trajectories[i + 1]), 0)
@@ -279,13 +281,13 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
 
         # Do forward pass for all transitions
         _, _, Qret1, _, _, Qret2, _, _= model(Variable(input), (hx, cx))
-        Qret = Qret1 if env_id == 0 else Qret2
+        Qret = (1 - cls_id) * Qret1 + cls_id * Qret2
         # Qret = 0 for terminal s, V(s_i; θ) otherwise
         Qret = ((1 - done) * Qret).detach()
 
         # Train the network off-policy
         _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs,
-               actions, rewards, Qret, average_policies, env_id, cls, old_policies=old_policies)
+               actions, rewards, Qret, average_policies, cls_id, classes, old_policies=old_policies)
     done = True  # Restore done flag after off-policy
 
   env.close()

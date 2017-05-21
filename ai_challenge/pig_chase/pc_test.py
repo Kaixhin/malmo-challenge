@@ -127,7 +127,7 @@ def test(rank, args, T, shared_model):
             t_start,
             sum(avg_rewards) / args.evaluation_episodes,
             sum(avg_episode_lengths) / args.evaluation_episodes,
-            sum(avg_accs) / args.evaluation_episodes))
+            sum(avg_accs) / args.evaluation_episodes / 25))
       rewards.append(avg_rewards)  # Keep all evaluations
       accs.append(avg_accs)
       # Keep all evaluations
