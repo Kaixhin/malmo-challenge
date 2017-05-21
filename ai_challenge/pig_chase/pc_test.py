@@ -1,55 +1,50 @@
 # -*- coding: utf-8 -*-
+from os import makedirs
+from os.path import exists, join, pardir, abspath
+from json import dump
 import time
 from datetime import datetime
 import torch
 from torch.autograd import Variable
+from numpy import mean, var
 
 from pc_environment import Env
 from pc_model import ActorCritic
 from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input, plot_line
 
+
 def leaderboard_save(accumulators, experiment_name, filepath):
-    """
-    Save the evaluation results in a JSON file
-    understandable by the leaderboard.
+  """
+  Save the evaluation results in a JSON file
+  understandable by the leaderboard.
 
-    Note: The leaderboard will not accept a submission if you already
-    uploaded a file with the same experiment name.
+  Note: The leaderboard will not accept a submission if you already
+  uploaded a file with the same experiment name.
 
-    :param experiment_name: An identifier for the experiment
-    :param filepath: Path where to store the results file
-    :return:
-    """
+  :param experiment_name: An identifier for the experiment
+  :param filepath: Path where to store the results file
+  :return:
+  """
 
-    assert experiment_name is not None, 'experiment_name cannot be None'
+  assert experiment_name is not None, 'experiment_name cannot be None'
 
-    from json import dump
-    from os.path import exists, join, pardir, abspath
-    from os import makedirs
-    from numpy import mean, var
+  # Compute metrics
+  metrics = {key: {'mean': mean(buffer), 'var': var(buffer), 'count': len(buffer)} for key, buffer in accumulators.items()}
+  metrics['experimentname'] = experiment_name
 
-    # Compute metrics
-    metrics = {key: {'mean': mean(buffer),
-                     'var': var(buffer),
-                     'count': len(buffer)}
-               for key, buffer in accumulators.items()}
+  try:
+    filepath = abspath(filepath)
+    parent = join(pardir, filepath)
+    if not exists(parent):
+      makedirs(parent)
 
-    metrics['experimentname'] = experiment_name
+    with open(filepath, 'w') as f_out:
+      dump(metrics, f_out)
 
-    try:
-        filepath = abspath(filepath)
-        parent = join(pardir, filepath)
-        if not exists(parent):
-            makedirs(parent)
-
-        with open(filepath, 'w') as f_out:
-            dump(metrics, f_out)
-
-        print('==================================')
-        print('Evaluation done, results written at %s' % filepath)
-
-    except Exception as e:
-        print('Unable to save the results: %s' % e)
+    print('==================================')
+    print('Evaluation done, results written at %s' % filepath)
+  except Exception as e:
+    print('Unable to save the results: %s' % e)
 
 
 def test(rank, args, T, shared_model):
@@ -73,9 +68,9 @@ def test(rank, args, T, shared_model):
 
       metrics_acc = None
       if args.eval_model == 100:
-          metrics_acc = accumulators['100k']
+        metrics_acc = accumulators['100k']
       if args.eval_model == 500:
-          metrics_acc = accumulators['500k']
+        metrics_acc = accumulators['500k']
 
       # Evaluate over several episodes and average results
       avg_rewards, avg_episode_lengths = [], []
@@ -130,9 +125,7 @@ def test(rank, args, T, shared_model):
       can_test = False  # Finish testing
       if args.evaluate:
         if metrics_acc is not None:
-            leaderboard_save(accumulators,
-            'Baseline_Experiment_'+ str(args.eval_model),
-            './baseline'+str(args.eval_model)+'.json')
+          leaderboard_save(accumulators, 'Baseline_Experiment_'+ str(args.eval_model), './baseline'+str(args.eval_model)+'.json')
         return
     else:
       if T.value() - t_start >= args.evaluation_interval:
