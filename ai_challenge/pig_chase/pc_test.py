@@ -129,10 +129,10 @@ def test(rank, args, T, shared_model):
       torch.save(model.state_dict(), 'checkpoints/' + str(t_start) + '.pth')  # Checkpoint model params
       can_test = False  # Finish testing
       if args.evaluate:
-        # if save
-        leaderboard_save(accumulators,
-          'Baseline_Experiment_'+ str(args.eval_model),
-          './baseline'+str(args.eval_model)+'.json')
+        if metrics_acc is not None:
+            leaderboard_save(accumulators,
+            'Baseline_Experiment_'+ str(args.eval_model),
+            './baseline'+str(args.eval_model)+'.json')
         return
     else:
       if T.value() - t_start >= args.evaluation_interval:
