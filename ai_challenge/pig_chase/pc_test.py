@@ -139,4 +139,6 @@ def test(rank, args, T, shared_model):
   env.close()
 
   # if save
-  leaderboard_save(accumulators, 'Baseline_Experiment', './baseline.json')
+  leaderboard_save(accumulators,
+    'Baseline_Experiment_'+ str(args.evaluation_episodes),
+    './baseline'+str(args.evaluation_episodes)+'.json')
