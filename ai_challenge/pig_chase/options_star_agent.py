@@ -11,8 +11,7 @@ import random
 import torch
 import torch.nn as nn
 from torch.nn import init
-import torch.optim as optim
-from torch.autograd import Variable
+
 
 from envwrap import create_env
 
@@ -69,33 +68,21 @@ class OptionsStar(BaseAgent):
         self._agents.append(FocusedAgent(name, 'Pig')) # pig chase agent
         self.classifier = Classifier()
 
-        self._hx = Variable(torch.zeros(1, 64))
-        self._cx = Variable(torch.zeros(1, 64))
-
     # Return state in C H W format (as a batch)
     def _map_to_observation(self, observation):
         observation = torch.Tensor(observation)
         return observation.permute(2, 1, 0).contiguous().unsqueeze(0)
 
-    def act(self, new_state, reward, done, is_training=False):
-        if done:
-            # backprop at the end of the episode
-            self._hx = Variable(torch.zeros(1, 64))
-            self._cx = Variable(torch.zeros(1, 64))
 
-
+    def act(self, new_state, reward, done, lstm_state, is_training=False):
         new_state_sym, new_state_topdown = new_state
         input_state = self._map_to_observation(new_state_topdown)
-        if is_training:
-            input_state = Variable(input_state)
-        meta_policy, (hx, cx) = self.classifier( input_state, (self._hx, self._cx))
-        self._hx = hx
-        self._cx = cx
+        meta_policy, lstm_state = self.classifier( input_state, lstm_state )
 
         cls = 1 if 0.5 < meta_policy.data[0][0] else 0
         if cls == 0:
             print('0')
-            return self._agents[0].act(new_state_sym, reward, done, is_training)
+            return self._agents[0].act(new_state_sym, reward, done, is_training), meta_policy, lstm_state
         else:
             print('1')
-            return self._agents[1].act(new_state_sym, reward, done, is_training)
+            return self._agents[1].act(new_state_sym, reward, done, is_training), meta_policy, lstm_state
