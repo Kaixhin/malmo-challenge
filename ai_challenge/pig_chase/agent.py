@@ -114,8 +114,12 @@ class FocusedAgent(AStarAgent):
         target = FocusedAgent.Neighbour(1, target[0][0], target[0][1], 0, "")
 
         # If distance to the pig is one, just turn and wait
-        if self.heuristic(me, target) == 1:
-            return FocusedAgent.ACTIONS.index("turn 1")  # substitutes for a no-op command
+        if self._target == 'lapis_block':
+            if self.heuristic(me, target) == 0:
+                return FocusedAgent.ACTIONS.index("turn 1")  # substitutes for a no-op command
+        else:
+            if self.heuristic(me, target) == 1:
+                return FocusedAgent.ACTIONS.index("turn 1")  # substitutes for a no-op command
 
         if not self._previous_target_pos == target:
             # Target has moved, or this is the first action of a new mission - calculate a new action list

@@ -28,6 +28,101 @@ from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
 from MalmoPython import MissionSpec
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
 
+class MyCustomBuilder(MalmoStateBuilder):
+    RGB_PALETTE = {
+        'sand': [255, 225, 150],
+        'grass': [44, 176, 55],
+        'lapis_block': [190, 190, 255],
+        'Agent_1': [255, 0, 0],
+        'Agent_2': [0, 0, 255],
+        'Pig': [185, 126, 131]
+    }
+    def __init__(self, entities_override=True):
+        self._entities_override = bool(entities_override)
+        self._gray = False
+
+    def build(self, environment):
+        """
+        Return a symbolic view of the board
+
+        :param environment Reference to the pig chase environment
+        :return (board, entities) where board is an array of shape (9, 9) with the block type / entities name for each coordinate, and entities is a list of current entities
+        """
+        assert isinstance(environment,
+                          PigChaseEnvironment), 'environment is not a Pig Chase Environment instance'
+
+        world_obs = environment.world_observations
+        if world_obs is None or ENV_BOARD not in world_obs:
+            return None
+
+        # Generate symbolic view
+        board = np.array(world_obs[ENV_BOARD], dtype=object).reshape(
+            ENV_BOARD_SHAPE)
+        entities = world_obs[ENV_ENTITIES]
+
+        if self._entities_override:
+            for entity in entities:
+                board[int(entity['z'] + 1), int(entity['x'])] += '/' + entity[
+                    'name']
+
+        world_obs = environment.world_observations
+        if world_obs is None or ENV_BOARD not in world_obs:
+            return None
+        # Generate symbolic view
+        board, entities = environment._internal_symbolic_builder.build(
+            environment)
+
+        palette = self.GRAY_PALETTE if self._gray else self.RGB_PALETTE
+        buffer_shape = (board.shape[0] * 2, board.shape[1] * 2)
+        if not self._gray:
+            buffer_shape = buffer_shape + (3,)
+        buffer = np.zeros(buffer_shape, dtype=np.float32)
+
+        it = np.nditer(board, flags=['multi_index', 'refs_ok'])
+
+        while not it.finished:
+            entities_on_cell = str.split(str(board[it.multi_index]), '/')
+            mapped_value = palette[entities_on_cell[0]]
+            # draw 4 pixels per block
+            buffer[it.multi_index[0] * 2:it.multi_index[0] * 2 + 2,
+                   it.multi_index[1] * 2:it.multi_index[1] * 2 + 2] = mapped_value
+            it.iternext()
+
+        for agent in entities:
+            agent_x = int(agent['x'])
+            agent_z = int(agent['z']) + 1
+            agent_pattern = buffer[agent_z * 2:agent_z * 2 + 2,
+                                   agent_x * 2:agent_x * 2 + 2]
+
+            # convert Minecraft yaw to 0=north, 1=west etc.
+            agent_direction = ((((int(agent['yaw']) - 45) % 360) // 90) - 1) % 4
+
+            if agent_direction == 0:
+                # facing north
+                agent_pattern[1, 0:2] = palette[agent['name']]
+                agent_pattern[0, 0:2] += palette[agent['name']]
+                agent_pattern[0, 0:2] /= 2.
+            elif agent_direction == 1:
+                # west
+                agent_pattern[0:2, 1] = palette[agent['name']]
+                agent_pattern[0:2, 0] += palette[agent['name']]
+                agent_pattern[0:2, 0] /= 2.
+            elif agent_direction == 2:
+                # south
+                agent_pattern[0, 0:2] = palette[agent['name']]
+                agent_pattern[1, 0:2] += palette[agent['name']]
+                agent_pattern[1, 0:2] /= 2.
+            else:
+                # east
+                agent_pattern[0:2, 0] = palette[agent['name']]
+                agent_pattern[0:2, 1] += palette[agent['name']]
+                agent_pattern[0:2, 1] /= 2.
+
+            buffer[agent_z * 2:agent_z * 2 + 2,
+                   agent_x * 2:agent_x * 2 + 2] = agent_pattern
+
+        return ( (board, entities), buffer / 255. )
+
 
 class PigChaseSymbolicStateBuilder(MalmoStateBuilder):
     """
