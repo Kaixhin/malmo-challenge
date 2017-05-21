@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from pc_environment import Env
 from pc_memory import EpisodicReplayMemory
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, STATE_SIZE, action_to_one_hot, extend_input
+from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input
 
 
 # Knuth's algorithm for generating Poisson samples
@@ -90,7 +90,7 @@ def _train(args, T, model, shared_model, shared_average_model, optimiser, polici
   policy_loss, value_loss = 0, 0
 
   # Train classification loss
-  class_loss = F.binary_cross_entropy(pred_class, target_class)
+  class_loss = F.binary_cross_entropy(pred_class, Variable(torch.Tensor(target_class)))
 
   # Calculate n-step returns in forward view, stepping backwards from the last state
   t = len(rewards)
@@ -144,13 +144,13 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
   torch.manual_seed(args.seed + rank)
 
   env = Env(rank)
-  model = ActorCritic(STATE_SIZE, ACTION_SIZE, args.hidden_size)
+  model = ActorCritic(args.hidden_size)
   model.train()
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)
 
-  # get label from the environment
-  cls_id = env.get_class_label
+  # Get label from the environment
+  cls_id = env.get_class_label()
 
   t = 1  # Thread step counter
   done = True  # Start new episode
@@ -179,8 +179,8 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
       policies, Qs, Vs, actions, rewards, average_policies = [], [], [], [], [], []
 
       while not done and t - t_start < args.t_max:
-        # get label from the environment
-        cls_id = env.get_class_label
+        # Get label from the environment
+        cls_id = env.get_class_label()
 
         # Calculate policy and values
         input = extend_input(state, action_to_one_hot(action, ACTION_SIZE), reward, episode_length)
@@ -286,5 +286,6 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         # Train the network off-policy
         _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs,
                actions, rewards, Qret, average_policies, env_id, cls, old_policies=old_policies)
+    done = True  # Restore done flag after off-policy
 
   env.close()

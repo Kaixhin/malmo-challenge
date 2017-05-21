@@ -10,7 +10,7 @@ ACTION_SIZE = 3
 
 
 # Global counter
-class Counter():
+class GlobalVar():
   def __init__(self):
     self.val = mp.Value('i', 0)
     self.lock = mp.Lock()
@@ -18,6 +18,10 @@ class Counter():
   def increment(self):
     with self.lock:
       self.val.value += 1
+
+  def set(self, value):
+    with self.lock:
+      self.val.value = value
 
   def value(self):
     with self.lock:
