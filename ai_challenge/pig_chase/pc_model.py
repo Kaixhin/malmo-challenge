@@ -36,7 +36,7 @@ class ActorCritic(nn.Module):
         init.constant(p[forget_start_idx:forget_end_idx], 1)
 
   def forward(self, x, h):
-    state, extra = x.narrow(1, 0, self.state_size), x.narrow(1, self.state_size, ACTION_SIZE + 2)
+    state, extra = x.narrow(1, 0, self.state_size).contiguous(), x.narrow(1, self.state_size, ACTION_SIZE + 2)
     state = state.view(state.size(0), STATE_SIZE[0], STATE_SIZE[1], STATE_SIZE[2]).contiguous()  # Restore spatial structure
     x = self.elu(self.conv1(state))
     x = self.elu(self.conv2(x))

@@ -260,5 +260,6 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         # Train the network off-policy
         _train(args, T, model, shared_model, shared_average_model, optimiser, policies, Qs, Vs,
                actions, rewards, Qret, average_policies, old_policies=old_policies)
+    done = True  # Restore done flag after off-policy
 
   env.close()
