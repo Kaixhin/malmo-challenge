@@ -113,16 +113,19 @@ class FocusedAgent(AStarAgent):
 
         # Get agent and target nodes
         me = FocusedAgent.Neighbour(1, me[0][0], me[0][1], direction, "")
-        target = FocusedAgent.Neighbour(1, target[0][0], target[0][1], 0, "")
-
-        # Target either exit or pig
-        if self._target == 'lapis_block':
-            if self.heuristic(me, target) == 0:
-                return FocusedAgent.ACTIONS.index("move 1")
+        if len(target) == 0:
+          return FocusedAgent.ACTIONS.index("turn 1")  # Sometimes the pig disappears...
         else:
-            # If distance to the pig is one, just turn and wait
-            if self.heuristic(me, target) == 1:
-                return FocusedAgent.ACTIONS.index("turn 1")  # Substitutes for a no-op command
+          target = FocusedAgent.Neighbour(1, target[0][0], target[0][1], 0, "")
+
+          # Target either exit or pig
+          if self._target == 'lapis_block':
+              if self.heuristic(me, target) == 0:
+                  return FocusedAgent.ACTIONS.index("move 1")
+          else:
+              # If distance to the pig is one, just turn and wait
+              if self.heuristic(me, target) == 1:
+                  return FocusedAgent.ACTIONS.index("turn 1")  # Substitutes for a no-op command
 
         if not self._previous_target_pos == target:
             # Target has moved, or this is the first action of a new mission - calculate a new action list
