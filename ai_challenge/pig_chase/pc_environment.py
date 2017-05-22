@@ -5,7 +5,7 @@ import torch
 from torch import multiprocessing as mp
 from common import ENV_AGENT_NAMES
 from agent import PigChaseChallengeAgent, RandomAgent
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, PigChaseTopDownStateBuilder
+from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, PigChaseSymbolicTopDownStateBuilder
 
 from pc_utils import GlobalVar
 
@@ -46,20 +46,20 @@ class Env():
     time.sleep(3)
 
     # Set up agent env
-    self.env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(gray=False), role=1, randomize_positions=True)
+    self.env = PigChaseEnvironment(clients, PigChaseSymbolicTopDownStateBuilder(gray=False), role=1, randomize_positions=True)
 
   def get_class_label(self):
     return self.agent_type.value() - 1
 
   def reset(self):
-    observation = self.env.reset()
+    symbols, observation = self.env.reset()
     while observation is None:  # May happen if episode ended with first action of other agent
-      observation = self.env.reset()
-    return _map_to_observation(observation)
+      symbols, observation = self.env.reset()
+    return symbols, _map_to_observation(observation)
 
   def step(self, action):
-    observation, reward, done = self.env.do(action)
-    return _map_to_observation(observation), reward, done, None  # Do not return any extra info
+    (symbols, observation), reward, done = self.env.do(action)
+    return symbols, _map_to_observation(observation), reward, done, None  # Do not return any extra info
 
   def close(self):
     return  # TODO: Kill processes + Docker containers

@@ -66,3 +66,37 @@ def plot_line(xs, ys_population, filename, y_title=''):
     'layout': dict(xaxis={'title': 'Step'},
                    yaxis={'title': y_title})
   }, filename=filename, auto_open=False)
+
+
+def leaderboard_save(accumulators, experiment_name, filepath):
+  """
+  Save the evaluation results in a JSON file
+  understandable by the leaderboard.
+
+  Note: The leaderboard will not accept a submission if you already
+  uploaded a file with the same experiment name.
+
+  :param experiment_name: An identifier for the experiment
+  :param filepath: Path where to store the results file
+  :return:
+  """
+
+  assert experiment_name is not None, 'experiment_name cannot be None'
+
+  # Compute metrics
+  metrics = {key: {'mean': mean(buffer), 'var': var(buffer), 'count': len(buffer)} for key, buffer in accumulators.items()}
+  metrics['experimentname'] = experiment_name
+
+  try:
+    filepath = abspath(filepath)
+    parent = join(pardir, filepath)
+    if not exists(parent):
+      makedirs(parent)
+
+    with open(filepath, 'w') as f_out:
+      dump(metrics, f_out)
+
+    print('==================================')
+    print('Evaluation done, results written at %s' % filepath)
+  except Exception as e:
+    print('Unable to save the results: %s' % e)

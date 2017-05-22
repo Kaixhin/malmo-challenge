@@ -151,9 +151,6 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)
 
-  # Get label from the environment
-  cls_id = env.get_class_label()
-
   t = 1  # Thread step counter
   done = True  # Start new episode
 
@@ -170,7 +167,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         hx, avg_hx = Variable(torch.zeros(1, args.hidden_size)), Variable(torch.zeros(1, args.hidden_size))
         cx, avg_cx = Variable(torch.zeros(1, args.hidden_size)), Variable(torch.zeros(1, args.hidden_size))
         # Reset environment and done flag
-        state = env.reset()
+        _, state = env.reset()
         action, reward, done, episode_length = 0, 0, False, 0
       else:
         # Perform truncated backpropagation-through-time (allows freeing buffers after backwards call)
@@ -199,7 +196,7 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
         action = policy.multinomial().data[0, 0]  # Graph broken as loss for stochastic action calculated manually
 
         # Step
-        next_state, reward, done, _ = env.step(action)
+        _, next_state, reward, done, _ = env.step(action)
         reward = args.reward_clip and min(max(reward, -1), 1) or reward  # Optionally clamp rewards
         done = done or episode_length >= args.max_episode_length  # Stop episodes at a max length
         episode_length += 1  # Increase episode counter

@@ -6,8 +6,10 @@ from torch import multiprocessing as mp
 
 from pc_model import ActorCritic
 from pc_optim import SharedRMSprop
-from pc_train import train
-from pc_test import test
+from pc_train_acer import train as train_acer
+from pc_test_acer import test as test_acer
+from pc_train_astar import train as train_astar
+from pc_test_astar import test as test_astar
 from pc_utils import GlobalVar
 
 
@@ -18,7 +20,7 @@ parser.add_argument('--num-processes', type=int, default=1, metavar='N', help='N
 parser.add_argument('--T-max', type=int, default=6e5, metavar='STEPS', help='Number of training steps')
 parser.add_argument('--t-max', type=int, default=30, metavar='STEPS', help='Max number of forward steps for A3C before update')
 parser.add_argument('--max-episode-length', type=int, default=30, metavar='LENGTH', help='Maximum episode length')
-parser.add_argument('--hidden-size', type=int, default=256, metavar='SIZE', help='Hidden size of LSTM cell')
+parser.add_argument('--hidden-size', type=int, default=64, metavar='SIZE', help='Hidden size of LSTM cell')
 parser.add_argument('--model', type=str, metavar='PARAMS', help='Pretrained model (state dict)')
 parser.add_argument('--memory-capacity', type=int, default=100000, metavar='CAPACITY', help='Experience replay memory capacity')
 parser.add_argument('--replay-ratio', type=int, default=4, metavar='r', help='Ratio of off-policy to on-policy updates')
@@ -42,6 +44,7 @@ parser.add_argument('--evaluation-interval', type=int, default=1000, metavar='ST
 parser.add_argument('--evaluation-episodes', type=int, default=20, metavar='N', help='Number of evaluation episodes to average over')
 parser.add_argument('--render', action='store_true', help='Render evaluation agent')
 parser.add_argument('--eval-model', type=int, default=0, help='Model that is used for evaluation')
+parser.add_argument('--astar', action='store_true', help='Run A* (not ACER)')
 
 if __name__ == '__main__':
   # Setup
@@ -69,14 +72,14 @@ if __name__ == '__main__':
 
   # Start validation agent
   processes = []
-  p = mp.Process(target=test, args=(0, args, T, shared_model))
+  p = mp.Process(target=args.astar and test_astar or test_acer, args=(0, args, T, shared_model))
   p.start()
   processes.append(p)
 
   if not args.evaluate:
     # Start training agents
     for rank in range(1, args.num_processes + 1):
-      p = mp.Process(target=train, args=(rank, args, T, shared_model, shared_average_model, optimiser))
+      p = mp.Process(target=args.astar and train_astar or train_acer, args=(rank, args, T, shared_model, shared_average_model, optimiser))
       p.start()
       processes.append(p)
 
