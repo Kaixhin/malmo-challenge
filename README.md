@@ -34,7 +34,7 @@ Run ACER with `OMP_NUM_THREADS=1 python pc_main.py`, and A* with the `--astar` o
 
 ## Discussion
 
-[![Team Pig Catcher Discussion Video](https://img.youtube.com/vi/9XRL6d-yxp4/0.jpg)](https://www.youtube.com/watch?v=9XRL6d-yxp4)
+[![Team Pig Catcher Discussion Video](https://img.youtube.com/vi/e3_vsTKsMCY/0.jpg)](https://www.youtube.com/watch?v=e3_vsTKsMCY)
 
 ## References
 
