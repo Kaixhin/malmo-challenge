@@ -11,7 +11,7 @@ We chose to approach this challenge using *hierarchical RL*. We assume there are
 - Can the agent distinguish between the two possible behaviours of the evaluation agent?
 - Does the agent learn qualitatively different subpolicies?
 
-We experienced difficulties getting both the classification and the policies to learn, so we then turned to using 2 A* planners as our subpolicies. Full results and more details can be found in our video.
+Unfortunately, due to technical difficulties and time restrictions, we were unable to successfully train an agent. Full results and more details can be found in our video.
 
 ## Design Decisions
 
@@ -30,7 +30,7 @@ Dependencies:
 
 Firstly, [build the Malmo Docker image](https://github.com/Kaixhin/malmo-challenge/tree/master/docker). Secondly, [enable running Docker as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/).
 
-Run ACER with `OMP_NUM_THREADS=1 python pc_main.py`, and A* with the `--astar` option. The code automatically opens up Minecraft (Docker) instances.
+Run ACER with `OMP_NUM_THREADS=1 python pc_main.py`. The code automatically opens up Minecraft (Docker) instances.
 
 ## Discussion
 
