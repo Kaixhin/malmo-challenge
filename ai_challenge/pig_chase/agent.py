@@ -31,7 +31,7 @@ from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
 
-P_FOCUSED = .75
+P_FOCUSED = 0.75
 CELL_WIDTH = 33
 
 
@@ -62,13 +62,21 @@ class PigChaseChallengeAgent(BaseAgent):
                                         visualizer = visualizer))
         self.current_agent = self._select_agent(P_FOCUSED)
 
+
+    def get_label(self):
+        return self.agent_id
+
     def _select_agent(self, p_focused):
-        return self._agents[np.random.choice(range(len(self._agents)),
-                                             p = [p_focused, 1. - p_focused])]
+        self.agent_id = np.random.choice(range(len(self._agents)),
+                                             p = [p_focused, 1. - p_focused])
+        print('type:'+str(self.agent_id))
+        return self._agents[self.agent_id]
+
 
     def act(self, new_state, reward, done, is_training=False):
         if done:
             self.current_agent = self._select_agent(P_FOCUSED)
+
         return self.current_agent.act(new_state, reward, done, is_training)
 
     def save(self, out_dir):
@@ -109,14 +117,17 @@ class FocusedAgent(AStarAgent):
         direction = ((((yaw - 45) % 360) // 90) - 1) % 4  # convert Minecraft yaw to 0=north, 1=east etc.
         target = [(j, i) for i, v in enumerate(state) for j, k in enumerate(v) if self._target in k]
 
+        #if self._target == 'lapis_block':
+        #    target = [(7,4)]
+
         # Get agent and target nodes
         me = FocusedAgent.Neighbour(1, me[0][0], me[0][1], direction, "")
         target = FocusedAgent.Neighbour(1, target[0][0], target[0][1], 0, "")
 
-        # If distance to the pit is zero
+
         if self._target == 'lapis_block':
-            if self.heuristic(me, target) == 0:
-                return FocusedAgent.ACTIONS.index("turn 1")  # substitutes for a no-op command
+            if self.heuristic(me, target) == 1:
+                return FocusedAgent.ACTIONS.index("move 1")
         else:# If distance to the pig is one, just turn and wait
             if self.heuristic(me, target) == 1:
                 return FocusedAgent.ACTIONS.index("turn 1")  # substitutes for a no-op command

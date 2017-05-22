@@ -11,10 +11,8 @@ import random
 import torch
 import torch.nn as nn
 from torch.nn import init
-
-
-from envwrap import create_env
-
+from torch.autograd import Variable
+from time import sleep
 # Constants
 STATE_SIZE = (3, 18, 18)
 ACTION_SIZE = 3
@@ -64,25 +62,23 @@ class OptionsStar(BaseAgent):
 
         nb_actions = len(ENV_ACTIONS)
         self._agents = []
-        self._agents.append(FocusedAgent(name, 'lapis_block')) # give up agent
         self._agents.append(FocusedAgent(name, 'Pig')) # pig chase agent
+        self._agents.append(FocusedAgent(name, 'lapis_block')) # give up agent
         self.classifier = Classifier()
-
+        self.current_agent = self._select_agent(0)
     # Return state in C H W format (as a batch)
     def _map_to_observation(self, observation):
         observation = torch.Tensor(observation)
         return observation.permute(2, 1, 0).contiguous().unsqueeze(0)
 
+    def _select_agent(self, id):
+        return self._agents[id]
 
     def act(self, new_state, reward, done, lstm_state, is_training=False):
-        new_state_sym, new_state_topdown = new_state
+        new_state_sym = new_state[0]
+        new_state_topdown = new_state[1]
         input_state = self._map_to_observation(new_state_topdown)
-        meta_policy, lstm_state = self.classifier( input_state, lstm_state )
-
+        meta_policy, lstm_state = self.classifier( Variable(input_state), lstm_state )
         cls = 1 if 0.5 < meta_policy.data[0][0] else 0
-        if cls == 0:
-            print('0')
-            return self._agents[0].act(new_state_sym, reward, done, is_training), meta_policy, lstm_state
-        else:
-            print('1')
-            return self._agents[1].act(new_state_sym, reward, done, is_training), meta_policy, lstm_state
+        self._select_agent(cls)
+        return self.current_agent.act(new_state_sym, reward, done, is_training), meta_policy, lstm_state

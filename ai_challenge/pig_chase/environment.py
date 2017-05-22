@@ -121,7 +121,7 @@ class MyCustomBuilder(MalmoStateBuilder):
             buffer[agent_z * 2:agent_z * 2 + 2,
                    agent_x * 2:agent_x * 2 + 2] = agent_pattern
 
-        return ( (board, entities), buffer / 255. )
+        return [(board, entities), buffer / 255.]
 
 
 class PigChaseSymbolicStateBuilder(MalmoStateBuilder):
