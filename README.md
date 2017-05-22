@@ -2,37 +2,39 @@
 
 ## Approach
 
-The challenge involves two agents who can *cooperate* to complete a common objective, or *defect* at the expense of the other agent. This is somewhat similar to the famous Prisoner's dilemma, especially as the agents do not have a common communication method. However, the optimal policy for the challenge, based on stag hunt [[1]](#references), depends on the policy of the other agent, as simpler agents may choose to defect, whilst smarter agents can successfully work to catch the stag. Not knowing the other agent's policy, the optimal solution is then based on *modelling* the other agent's policy. Similarly, the challenge can be considered a *sequential social dilemma* [[2]](#references), as goals could change over time - if cooperating will fail in the time left, it would actually be best to defect (or technically, wait for the environment to time out, given the current reward structure).
+The challenge involves 2 agents who can *cooperate* to complete a common objective, or *defect* at the expense of the other agent. The optimal policy for the challenge, based on stag hunt [[1]](#references), depends on the policy of the other agent, as simpler agents may choose to defect, whilst smarter agents can successfully work to catch the stag. Not knowing the other agent's policy, the optimal solution is then based on *modelling* the other agent's policy. Similarly, the challenge can be considered a *sequential social dilemma* [[2]](#references), as goals could change over time.
 
-That said, by treating the other agent as part of the environment, we can still use model-free reinforcement learning, and simply aim to maximise the reward of our agent. As a baseline we take a deep reinforcement learning algorithm - the actor-critic with experience replay (ACER) [[3]](#references) - and train it against the evaluation agent (which randomly uses a "focused" or random strategy every episode).
+By treating the other agent as part of the environment, we can use model-free RL, and simply aim to maximise the reward of our agent. As a baseline we take a DRL algorithm - ACER [[3]](#references) - and train it against the evaluation agent (which randomly uses a focused or random strategy every episode).
 
-Given the specifics of the evaluation agent, which is either a collaborative agent (using A* search to head for the pig) or not (a random agent), we chose to approach this challenge using *hierarchical reinforcement learning*. Specifically, we assume there are two subpolicies, one for each type of partner agent. To do so, we use option heads [[4]](#references), whereby the agent has shared features, but separate heads for different subpolicies. In this case, ACER with two subpolicies has two Q-value heads and two policy heads. To choose which subpolicy to use at any given time, the agent also has an additional classifier head that is trained (using an oracle) to distinguish which option to use. Therefore, we ask the following questions:
+We chose to approach this challenge using *hierarchical RL*. We assume there are 2 subpolicies, one for each type of partner agent. To do so, we use option heads [[4]](#references), whereby the agent has shared features, but separate heads for different subpolicies. In this case, ACER with 2 subpolicies has 2 Q heads and 2 policy heads. To choose which subpolicy to use at any given time, the agent also has an additional classifier head that is trained (using an oracle) to distinguish which option to use. Therefore, we ask the following questions:
 
 - Can the agent distinguish between the two possible behaviours of the evaluation agent?
 - Does the agent learn qualitatively different subpolicies?
 
+We experienced difficulties getting both the classification and the policies to learn, so we then turned to using 2 A* planners as our subpolicies. Full results and more details can be found in our video.
+
 ## Design Decisions
 
-For our baseline, we implemented the ACER algorithm [[3]](#references) based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references). Our challenge entry augments the agent further with option heads [[4]](#references), which aim to distinguish the different policies of the evaluation agent.
+For our baseline, we implemented ACER [[3]](#references) in PyTorch based on reference code [[5, 6]](#references). In addition, we augmented the state that the agent receives with the previous action, reward and a step counter [[7]](#references). Our challenge entry augments the agent with option heads [[4]](#references), and we aim to distinguish the different policies of the evaluation agent.
 
-We also introduce a novel contribution - a batch version of ACER - as off-policy learning relies on sampling trajectories from experience replay memory. We collect a batch of trajectories, and then truncate them to match the smallest trajectory retrieved. This increases stability, especially as the length of most of the saved trajectories max out; for this challenge in particular, with a fixed episode length, we receive this benefit from the start of off-policy training.
+We also introduce a novel contribution - a batch version of ACER - which increases stability. We collect a batch of off-policy trajectories, and then truncate them to match the smallest.
 
 ## Instructions
 
-The dependencies are:
+Dependencies:
 
 - [Python 2](https://www.python.org/)
 - [PyTorch](http://pytorch.org/)
 - [Plotly](https://plot.ly/python/)
 - [Docker](https://www.docker.com/) + [docker-py](https://docker-py.readthedocs.io/en/stable/)
 
-Firstly, [build the Malmo Docker image](https://github.com/Kaixhin/malmo-challenge/tree/master/docker) (with the tag `malmo`). Secondly, [enable running Docker as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/).
+Firstly, [build the Malmo Docker image](https://github.com/Kaixhin/malmo-challenge/tree/master/docker). Secondly, [enable running Docker as a non-root user](https://docs.docker.com/engine/installation/linux/linux-postinstall/).
 
-Run with `OMP_NUM_THREADS=1 python main.py`. The environment flag prevents multiple OpenMP threads being run in each process. Automatically opens up Minecraft (Docker) instances with ports in the range [10000, 10000 + num_processes] and  [20000, 20000 + num_processes].
+Run ACER with `OMP_NUM_THREADS=1 python pc_main.py`, and A* with the `--astar` option. Automatically opens up Minecraft (Docker) instances.
 
-## Video
+## Discussion
 
-Approx 1-3 mins.
+**TODO: Link to video**
 
 ## References
 
