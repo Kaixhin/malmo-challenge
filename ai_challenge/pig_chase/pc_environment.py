@@ -46,16 +46,16 @@ class Env():
     time.sleep(3)
 
     # Set up agent env
-    self.env = PigChaseEnvironment(clients, PigChaseSymbolicTopDownStateBuilder(gray=False), role=1, randomize_positions=True, human_speed=False)
+    self.env = PigChaseEnvironment(clients, PigChaseSymbolicTopDownStateBuilder(gray=False), role=1, randomize_positions=True)
 
   def get_class_label(self):
     return self.agent_type.value() - 1
 
   def reset(self):
-    full_state = self.env.reset()
-    while full_state is None:  # May happen if episode ended with first action of other agent
-      full_state = self.env.reset()
-    return full_state[0], _map_to_observation(full_state[1])  # symbols, observation
+    symbols, observation = self.env.reset()
+    while observation is None:  # May happen if episode ended with first action of other agent
+      symbols, observation = self.env.reset()
+    return symbols, _map_to_observation(observation)
 
   def step(self, action):
     (symbols, observation), reward, done = self.env.do(action)
