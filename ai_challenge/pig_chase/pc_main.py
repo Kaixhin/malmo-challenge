@@ -11,7 +11,7 @@ from pc_test import test
 from pc_utils import GlobalVar
 
 
-parser = argparse.ArgumentParser(description='A3C')
+parser = argparse.ArgumentParser(description='ACER')
 parser.add_argument('--seed', type=int, default=123, help='Random seed')
 parser.add_argument('--env', type=str, default='CartPole-v1', metavar='ENV', help='OpenAI Gym environment')
 parser.add_argument('--num-processes', type=int, default=1, metavar='N', help='Number of training async agents (does not include single validation agent)')
@@ -31,7 +31,7 @@ parser.add_argument('--trust-region-decay', type=float, default=0.99, metavar='�
 parser.add_argument('--trust-region-threshold', type=float, default=1, metavar='δ', help='Trust region threshold value')
 parser.add_argument('--reward-clip', action='store_true', help='Clip rewards to [-1, 1]')
 parser.add_argument('--lr', type=float, default=1e-3, metavar='η', help='Learning rate')
-parser.add_argument('--lr-decay', action='store_true', help='Linearly decay learning rate to 0')  # TODO: See if this is better on by default
+parser.add_argument('--lr-decay', action='store_true', help='Linearly decay learning rate to 0')
 parser.add_argument('--rmsprop-decay', type=float, default=0.99, metavar='α', help='RMSprop decay factor')
 parser.add_argument('--batch-size', type=int, default=16, metavar='SIZE', help='Off-policy batch size')
 parser.add_argument('--entropy-weight', type=float, default=0.001, metavar='β', help='Entropy regularisation weight')
