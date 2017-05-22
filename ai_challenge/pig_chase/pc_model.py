@@ -2,20 +2,12 @@
 import torch
 from torch import nn
 from torch.nn import init
-from agent import FocusedAgent
-from common import ENV_AGENT_NAMES
 
 from pc_utils import ACTION_SIZE, STATE_SIZE
-
 
 class ActorCritic(nn.Module):
   def __init__(self, hidden_size):
     super(ActorCritic, self).__init__()
-    self._agents = []
-    self._agents.append(FocusedAgent(ENV_AGENT_NAMES[1], 'Pig')) # Pig chase agent
-    self._agents.append(FocusedAgent(ENV_AGENT_NAMES[1], 'lapis_block')) # Defecting agent
-    self.current_agent = self._select_agent(0)
-
     self.state_size = STATE_SIZE[0] * STATE_SIZE[1] * STATE_SIZE[2]
 
     self.elu = nn.ELU(inplace=True)
@@ -64,12 +56,3 @@ class ActorCritic(nn.Module):
     V2 = (Q2 * policy2).sum(1)
     cls = self.sigmoid(self.fc_class(x))
     return policy1, Q1, V1, policy2, Q2, V2, cls, h
-
-  def _select_agent(self, agent_id):
-    return self._agents[agent_id]
-
-  def act(self, symbols, observation, reward, done, h, is_training=False):
-    _, _, _, _, _, _, meta_policy, h = self(observation, h)
-    cls = 1 if 0.5 < meta_policy.data[0][0] else 0
-    self._select_agent(cls)
-    return self.current_agent.act(symbols, reward, done, is_training), meta_policy, h

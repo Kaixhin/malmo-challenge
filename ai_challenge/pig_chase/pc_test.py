@@ -10,7 +10,41 @@ from numpy import mean, var
 
 from pc_environment import Env
 from pc_model import ActorCritic
-from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input, plot_line, leaderboard_save
+from pc_utils import ACTION_SIZE, action_to_one_hot, extend_input, plot_line
+
+
+def leaderboard_save(accumulators, experiment_name, filepath):
+  """
+  Save the evaluation results in a JSON file
+  understandable by the leaderboard.
+
+  Note: The leaderboard will not accept a submission if you already
+  uploaded a file with the same experiment name.
+
+  :param experiment_name: An identifier for the experiment
+  :param filepath: Path where to store the results file
+  :return:
+  """
+
+  assert experiment_name is not None, 'experiment_name cannot be None'
+
+  # Compute metrics
+  metrics = {key: {'mean': mean(buffer), 'var': var(buffer), 'count': len(buffer)} for key, buffer in accumulators.items()}
+  metrics['experimentname'] = experiment_name
+
+  try:
+    filepath = abspath(filepath)
+    parent = join(pardir, filepath)
+    if not exists(parent):
+      makedirs(parent)
+
+    with open(filepath, 'w') as f_out:
+      dump(metrics, f_out)
+
+    print('==================================')
+    print('Evaluation done, results written at %s' % filepath)
+  except Exception as e:
+    print('Unable to save the results: %s' % e)
 
 
 def test(rank, args, T, shared_model):
@@ -28,6 +62,9 @@ def test(rank, args, T, shared_model):
 
   accumulators = {'100k': [], '500k': []}
   
+  # Get label from the environment
+  cls_id = env.get_class_label()
+
   while T.value() <= args.T_max:
     if can_test:
       t_start = T.value()  # Reset counter
@@ -49,7 +86,7 @@ def test(rank, args, T, shared_model):
             hx = Variable(torch.zeros(1, args.hidden_size), volatile=True)
             cx = Variable(torch.zeros(1, args.hidden_size), volatile=True)
             # Reset environment and done flag
-            _, state = env.reset()
+            state = env.reset()
             action, reward, done, episode_length = 0, 0, False, 0
             reward_sum, class_acc = 0, 0
 
@@ -70,7 +107,7 @@ def test(rank, args, T, shared_model):
           action = policy.max(1)[1].data[0, 0]
 
           # Step
-          _, state, reward, done, _ = env.step(action)
+          state, reward, done, _ = env.step(action)
           reward_sum += reward
           class_acc += cls == cls_id and 1 or 0
           done = done or episode_length >= args.max_episode_length  # Stop episodes at a max length
