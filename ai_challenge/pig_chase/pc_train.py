@@ -151,9 +151,6 @@ def train(rank, args, T, shared_model, shared_average_model, optimiser):
 
   memory = EpisodicReplayMemory(args.memory_capacity, args.max_episode_length)
 
-  # Get label from the environment
-  cls_id = env.get_class_label()
-
   t = 1  # Thread step counter
   done = True  # Start new episode
 
